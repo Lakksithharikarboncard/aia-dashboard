@@ -1,0 +1,85 @@
+@import '@mantine/core/styles.css';
+@import '@mantine/charts/styles.css';
+
+@import url('https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap');
+
+/* ─── Base ───────────────────────────────────────────────── */
+
+body {
+  background: #E2E5EA;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Typography helpers ─────────────────────────────────── */
+
+/* Tabular numerics — apply to any financial number */
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' on, 'lnum' on;
+  letter-spacing: -0.015em;
+}
+
+/* ─── Scrollbar ───────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D0D4DC;
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #AAACB5;
+}
+
+/* ─── Recharts / Mantine chart overrides ─────────────────── */
+
+/* Smooth bar chart corners */
+.recharts-bar-rectangle path {
+  rx: 2;
+}
+
+/* Subtle grid lines */
+.recharts-cartesian-grid line {
+  stroke: rgba(18, 19, 26, 0.06) !important;
+}
+
+/* Axis text */
+.recharts-text {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 11px !important;
+  fill: #8A8C96 !important;
+}
+
+/* Tooltip */
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 12px !important;
+  border-radius: 0;
+  border: 1px solid rgba(18,19,26,0.1) !important;
+  box-shadow: 0 4px 12px rgba(18,19,26,0.1) !important;
+}
+
+/* Legend text */
+.recharts-legend-item-text {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 12px !important;
+  color: #6B6E7A !important;
+}
+
+/* ─── Mantine Select dropdown ────────────────────────────── */
+
+.mantine-Select-dropdown {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  border-radius: 0;
+  border: 1px solid rgba(18,19,26,0.1);
+  box-shadow: 0 4px 16px rgba(18,19,26,0.1);
+}
