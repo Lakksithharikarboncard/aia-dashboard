@@ -52,9 +52,6 @@ const LiveBadge = () => (
 const AIInsightsChip = () => (
   <UnstyledButton
     style={{
-      position: 'absolute',
-      top: -44,
-      right: 24,
       border: '1px solid var(--color-border)',
       borderRadius: '20px',
       padding: '6px 12px',
@@ -63,7 +60,6 @@ const AIInsightsChip = () => (
       alignItems: 'center',
       gap: 8,
       boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-      zIndex: 10,
     }}
   >
     <IconSparkles size={14} color="#D97706" />
@@ -91,9 +87,10 @@ export const CashTab = () => {
   const [cashGrain, setCashGrain] = useState<Grain>('Week');
 
   return (
-    <Box p="24px" style={{ position: 'relative', minHeight: '100vh' }}>
-      <AIInsightsChip />
-      
+    <Box p="24px">
+      <Group justify="flex-end" mb={16}>
+        <AIInsightsChip />
+      </Group>
       <KPIGrid>
         {/* W10 — Cash Balance */}
         <WidgetCard id="w10-cash-full" title="Cash Balance" colSpan={6}>
@@ -175,9 +172,9 @@ export const CashTab = () => {
               <Text ff="Albert Sans" size="28px" fw={700} c="var(--color-text-primary)" className="num">{formatCurrency(180000)}</Text>
               <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)" mb={12}>5 bills</Text>
               
-              <BillRow vendor="Vendor A" billNo="#205" amount={60000} age="Due 2 Nov" color="var(--color-text-ghost)" />
-              <BillRow vendor="Vendor B" billNo="#301" amount={75000} age="Due 4 Nov" color="var(--color-text-ghost)" />
-              <BillRow vendor="Vendor C" billNo="#144" amount={45000} age="Due 6 Nov" color="var(--color-text-ghost)" />
+              <BillRow vendor="Vendor A" billNo="#205" amount={60000} age="Due 24 Mar" color="var(--color-text-ghost)" />
+              <BillRow vendor="Vendor B" billNo="#301" amount={75000} age="Due 25 Mar" color="var(--color-text-ghost)" />
+              <BillRow vendor="Vendor C" billNo="#144" amount={45000} age="Due 27 Mar" color="var(--color-text-ghost)" />
             </Box>
 
             {/* 8-15 DAYS */}
@@ -186,9 +183,9 @@ export const CashTab = () => {
               <Text ff="Albert Sans" size="28px" fw={700} c="var(--color-text-primary)" className="num">{formatCurrency(420000)}</Text>
               <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)" mb={12}>8 bills</Text>
               
-              <BillRow vendor="Vendor D" billNo="#408" amount={120000} age="Due 9 Nov" color="var(--color-text-ghost)" />
-              <BillRow vendor="Vendor E" billNo="#519" amount={90000} age="Due 12 Nov" color="var(--color-text-ghost)" />
-              <BillRow vendor="Vendor F" billNo="#312" amount={60000} age="Due 15 Nov" color="var(--color-text-ghost)" />
+              <BillRow vendor="Vendor D" billNo="#408" amount={120000} age="Due 31 Mar" color="var(--color-text-ghost)" />
+              <BillRow vendor="Vendor E" billNo="#519" amount={90000} age="Due 3 Apr" color="var(--color-text-ghost)" />
+              <BillRow vendor="Vendor F" billNo="#312" amount={60000} age="Due 5 Apr" color="var(--color-text-ghost)" />
             </Box>
           </Box>
         </WidgetCard>

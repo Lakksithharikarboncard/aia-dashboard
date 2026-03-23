@@ -1,5 +1,5 @@
 import React from 'react';
-import { AppShell, Group, Text, Box, Select, UnstyledButton } from '@mantine/core';
+import { AppShell, Group, Text, Box, UnstyledButton } from '@mantine/core';
 import { useDashboard } from '../../context/DashboardContext';
 import {
   IconLayoutDashboard,
@@ -19,7 +19,7 @@ const NAV_ITEMS = [
 ];
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-  const { activeTab, setActiveTab, dateRange, setDateRange, isPanelOpen, closePanel } = useDashboard();
+  const { activeTab, setActiveTab, dateFrom, dateTo, setDateFrom, setDateTo, isPanelOpen, closePanel } = useDashboard();
 
   return (
     <AppShell
@@ -87,29 +87,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             ))}
           </Group>
 
-          {/* Right: Date selector */}
-          <Select
-            placeholder="This Month"
-            data={[
-              'Last 7 Days', 'This Month', 'Last Month', 'This Quarter', 'This Year'
-            ]}
-            value={dateRange}
-            onChange={(val) => val && setDateRange(val)}
-            size="sm"
-            w={160}
-            styles={{
-              input: {
-                fontFamily: 'Space Grotesk',
-                fontSize: 13,
-                fontWeight: 600,
-                backgroundColor: 'var(--color-bg-hover)',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-inner)',
-                color: 'var(--color-text-primary)',
-                height: 34,
-              },
-            }}
-          />
+          {/* Right: Date range */}
+          <DateRangePicker from={dateFrom} to={dateTo} onFromChange={setDateFrom} onToChange={setDateTo} />
         </Group>
       </AppShell.Header>
 
@@ -125,6 +104,56 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     </AppShell>
   );
 };
+
+function DateRangePicker({
+  from, to, onFromChange, onToChange,
+}: {
+  from: string; to: string; onFromChange: (d: string) => void; onToChange: (d: string) => void;
+}) {
+  const inputStyle: React.CSSProperties = {
+    fontFamily: 'Space Grotesk',
+    fontSize: 12,
+    fontWeight: 500,
+    color: 'var(--color-text-primary)',
+    backgroundColor: 'transparent',
+    border: 'none',
+    outline: 'none',
+    width: 96,
+    cursor: 'pointer',
+    colorScheme: 'light',
+  };
+
+  return (
+    <Box
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: 'var(--color-bg-hover)',
+        border: '1px solid var(--color-border)',
+        borderRadius: 8,
+        padding: '0 10px',
+        height: 34,
+      }}
+    >
+      <input
+        type="date"
+        value={from}
+        max={to}
+        onChange={(e) => onFromChange(e.target.value)}
+        style={inputStyle}
+      />
+      <Box style={{ width: 1, height: 14, backgroundColor: 'var(--color-border)' }} />
+      <input
+        type="date"
+        value={to}
+        min={from}
+        onChange={(e) => onToChange(e.target.value)}
+        style={inputStyle}
+      />
+    </Box>
+  );
+}
 
 function NavTab({
   icon,
@@ -164,8 +193,8 @@ function NavTab({
           style={{
             position: 'absolute',
             bottom: 0,
-            left: 16,
-            right: 16,
+            left: 0,
+            right: 0,
             height: 2,
             backgroundColor: 'var(--color-accent-blue)',
             borderRadius: '2px 2px 0 0',

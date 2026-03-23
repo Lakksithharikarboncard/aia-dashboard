@@ -6,8 +6,10 @@ type PanelView = 'summary' | 'detail';
 interface DashboardState {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  dateRange: string;
-  setDateRange: (range: string) => void;
+  dateFrom: string;
+  dateTo: string;
+  setDateFrom: (d: string) => void;
+  setDateTo: (d: string) => void;
   isPanelOpen: boolean;
   activeWidgetId: string | null;
   panelView: PanelView;
@@ -21,7 +23,8 @@ const DashboardContext = createContext<DashboardState | undefined>(undefined);
 
 export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [dateRange, setDateRange] = useState('This Month');
+  const [dateFrom, setDateFrom] = useState('2026-03-01');
+  const [dateTo, setDateTo] = useState('2026-03-23');
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [activeWidgetId, setActiveWidgetId] = useState<string | null>(null);
   const [panelView, setPanelView] = useState<PanelView>('summary');
@@ -43,8 +46,10 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
       value={{
         activeTab,
         setActiveTab,
-        dateRange,
-        setDateRange,
+        dateFrom,
+        dateTo,
+        setDateFrom,
+        setDateTo,
         isPanelOpen,
         activeWidgetId,
         panelView,

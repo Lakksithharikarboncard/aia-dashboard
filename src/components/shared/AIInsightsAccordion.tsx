@@ -70,18 +70,9 @@ export const AIInsightsAccordion = () => {
   const toggle = (id: string) => setExpandedId(expandedId === id ? null : id);
 
   return (
-    <Box
-      style={{
-        gridColumn: 'span 12',
-        backgroundColor: 'var(--color-bg-card)',
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-card)',
-        boxShadow: 'var(--shadow-card)',
-        marginBottom: 24,
-      }}
-    >
+    <Box>
       {/* Header Row */}
-      <Group justify="space-between" p="16px 20px" style={{ borderBottom: '1px solid var(--color-border)' }}>
+      <Group justify="space-between" p="0 0 16px" style={{ borderBottom: '1px solid var(--color-border)' }}>
         <Group gap={8}>
           <IconSparkles size={16} color="#D97706" />
           <Text ff="Space Grotesk" fw={600} size="13px" c="var(--color-text-primary)">

@@ -57,23 +57,27 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Card Header */}
-      <Group justify="space-between" align="center" mb={16} wrap="nowrap">
-        <Text
-          ff="Space Grotesk"
-          fw={500}
-          size="13px"
-          c="var(--color-text-muted)"
-          style={{ letterSpacing: '0.01em' }}
-        >
-          {title}
-        </Text>
-        {titleExtra && (
-          <Box onClick={(e) => e.stopPropagation()}>
-            {titleExtra}
-          </Box>
-        )}
-      </Group>
+      {/* Card Header — omitted when title is empty (e.g. self-headered accordion) */}
+      {(title || titleExtra) && (
+        <Group justify="space-between" align="center" mb={16} wrap="nowrap">
+          {title && (
+            <Text
+              ff="Space Grotesk"
+              fw={500}
+              size="13px"
+              c="var(--color-text-muted)"
+              style={{ letterSpacing: '0.01em' }}
+            >
+              {title}
+            </Text>
+          )}
+          {titleExtra && (
+            <Box onClick={(e) => e.stopPropagation()}>
+              {titleExtra}
+            </Box>
+          )}
+        </Group>
+      )}
 
       {/* Card Content */}
       <Box style={{ flex: 1, position: 'relative' }}>

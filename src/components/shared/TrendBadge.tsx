@@ -81,7 +81,7 @@ export const TrendBadge: React.FC<TrendBadgeProps> = ({ value, label, sentiment:
           c={text}
           style={{ lineHeight: 1 }}
         >
-          {Math.abs(value)}%
+          {Math.abs(value).toFixed(1)}%
         </Text>
       </Box>
       <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)" style={{ lineHeight: 1 }}>

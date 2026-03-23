@@ -1523,7 +1523,7 @@ const PanelReport = ({ widgetId }: { widgetId: string }) => {
 // ─── Main Panel Component ────────────────────────────────────────────────────
 
 export const SidePanel = () => {
-  const { isPanelOpen, closePanel, activeWidgetId, dateRange } = useDashboard();
+  const { isPanelOpen, closePanel, activeWidgetId, dateFrom, dateTo } = useDashboard();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closePanel(); };
@@ -1561,7 +1561,7 @@ export const SidePanel = () => {
               {title}
             </Text>
             <Text ff="Space Grotesk" size="12px" c="var(--color-text-ghost)" mt={2}>
-              {dateRange ?? 'This Month'}
+              {dateFrom && dateTo ? `${dateFrom} — ${dateTo}` : 'This Month'}
             </Text>
           </Box>
           <UnstyledButton onClick={closePanel} style={{ color: 'var(--color-text-ghost)', padding: 4 }}>
