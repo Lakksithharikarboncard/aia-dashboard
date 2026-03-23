@@ -153,7 +153,7 @@ export const OverviewTab = () => {
         </WidgetCard>
 
         {/* ── AI Insights (full width card) ───────────────── */}
-        <WidgetCard id="w-ai-insights" title="" colSpan={12}>
+        <WidgetCard id="w-ai-insights" title="" colSpan={12} disablePanel>
           <AIInsightsAccordion />
         </WidgetCard>
 

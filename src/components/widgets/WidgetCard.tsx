@@ -17,6 +17,8 @@ interface WidgetCardProps {
   titleExtra?: React.ReactNode;
   children: React.ReactNode;
   style?: React.CSSProperties;
+  /** Prevent clicking the card from opening the side panel */
+  disablePanel?: boolean;
 }
 
 export const WidgetCard: React.FC<WidgetCardProps> = ({
@@ -29,12 +31,13 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
   titleExtra,
   children,
   style,
+  disablePanel = false,
 }) => {
   const { openPanel } = useDashboard();
   const [hovered, setHovered] = useState(false);
 
   const handleCardClick = () => {
-    openPanel(id, 'summary', summaryData);
+    if (!disablePanel) openPanel(id, 'summary', summaryData);
   };
 
   return (
@@ -42,7 +45,7 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
       style={{
         gridColumn: `span ${colSpan}`,
         position: 'relative',
-        cursor: 'pointer',
+        cursor: disablePanel ? 'default' : 'pointer',
         backgroundColor: 'var(--color-bg-card)',
         border: '1px solid var(--color-border)',
         borderRadius: 'var(--radius-card)',
