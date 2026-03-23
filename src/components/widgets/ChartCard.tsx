@@ -23,7 +23,6 @@ export const ChartCard: React.FC<ChartCardProps> = ({
   title,
   colSpan,
   status = 'success',
-  needsReview = false,
   isZoneA = false,
   onRetry,
   summaryData,
@@ -37,7 +36,6 @@ export const ChartCard: React.FC<ChartCardProps> = ({
       title={title}
       colSpan={colSpan}
       status={status}
-      needsReview={needsReview}
       isZoneA={isZoneA}
       onRetry={onRetry}
       summaryData={summaryData}
