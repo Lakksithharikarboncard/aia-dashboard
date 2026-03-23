@@ -114,6 +114,7 @@ const PLSubRow = ({ label, amount }: { label: string; amount: number }) => (
 const PanelReport = ({ widgetId }: { widgetId: string }) => {
   const [selectedCustomer, setSelectedCustomer] = useState('Acme Corp');
   const [selectedVendor, setSelectedVendor] = useState('Vendor X');
+  const [selectedCat, setSelectedCat] = useState('COGS');
 
   // DSO / DPO shared
   const isDSO = ['w4-dso', 'w15-dso', 'w15-dso-full'].includes(widgetId);
@@ -1328,7 +1329,6 @@ const PanelReport = ({ widgetId }: { widgetId: string }) => {
 
   // ── Expense Breakdown panel ────────────────────────────────────────────────
   if (widgetId === 'w11-exp-breakdown') {
-    const [selectedCat, setSelectedCat] = useState('COGS');
     const catDetail: Record<string, { label: string; amt: string; pct: string }[]> = {
       'COGS': [
         { label: 'Purchase Accounts', amt: '₹22L',   pct: '83%' },
