@@ -1,20 +1,14 @@
 import { useState } from 'react';
-import { Box, Group, Text, Tooltip, Badge } from '@mantine/core';
+import { Box, Group, Text, Tooltip } from '@mantine/core';
 import { WidgetCard } from '../components/widgets/WidgetCard';
-import { ChartCard } from '../components/widgets/ChartCard';
 import { TrendBadge } from '../components/shared/TrendBadge';
-import { AIInsightsStrip } from '../components/shared/AIInsightsStrip';
+import { AIInsightsAccordion } from '../components/shared/AIInsightsAccordion';
 import { GrainToggle, type Grain } from '../components/shared/GrainToggle';
-import { CustomerBar } from '../components/shared/CustomerBar';
 import { KPIGrid } from '../components/widgets/KPIGrid';
-import { Sparkline, LineChart } from '@mantine/charts';
+import { AreaChart } from '@mantine/charts';
+import { formatCurrency } from '../utils/formatters';
 
-// Number style — tabular numerics, consistent across all KPI values
-const NUM: React.CSSProperties = {
-  fontVariantNumeric: 'tabular-nums',
-  fontFeatureSettings: '"tnum" on, "lnum" on',
-  letterSpacing: '-0.015em',
-};
+// ─── Data ────────────────────────────────────────────────────────────────────
 
 const REVENUE_DATA: Record<Grain, { date: string; revenue: number }[]> = {
   Day: [
@@ -24,8 +18,8 @@ const REVENUE_DATA: Record<Grain, { date: string; revenue: number }[]> = {
     { date: '30 Jun', revenue: 200000 },
   ],
   Week: [
-    { date: 'W1', revenue: 900000 },  { date: 'W2', revenue: 1100000 },
-    { date: 'W3', revenue: 980000 },  { date: 'W4', revenue: 1020000 },
+    { date: 'W1', revenue: 900000  }, { date: 'W2', revenue: 1100000 },
+    { date: 'W3', revenue: 980000  }, { date: 'W4', revenue: 1020000 },
   ],
   Month: [
     { date: 'Jan', revenue: 3000000 }, { date: 'Feb', revenue: 3500000 },
@@ -34,276 +28,226 @@ const REVENUE_DATA: Record<Grain, { date: string; revenue: number }[]> = {
   ],
 };
 
-// ─── Shared label/value row for P&L and AR/AP cards ──────────────────────────
-function FinRow({
-  label,
-  value,
-  weight = 'normal',
-  topBorder = false,
-}: {
-  label: React.ReactNode;
-  value: string;
-  weight?: 'normal' | 'total';
-  topBorder?: boolean;
-}) {
-  const isTotal = weight === 'total';
-  return (
-    <Group
-      justify="space-between"
-      style={{
-        paddingTop: topBorder ? 14 : 0,
-        paddingBottom: 0,
-        marginTop: topBorder ? 14 : 0,
-        borderTop: topBorder ? '1px solid rgba(18,19,26,0.08)' : 'none',
-      }}
-    >
-      <Box>{label}</Box>
-      <Text
-        ff="Albert Sans"
-        fw={isTotal ? 600 : 500}
-        size={isTotal ? '15px' : '14px'}
-        c={isTotal ? '#12131A' : '#2C2E36'}
-        style={NUM}
-      >
-        {value}
-      </Text>
-    </Group>
-  );
-}
+const GRAIN_STATS: Record<Grain, { current: number; prev: number; currentLabel: string; changeLabel: string }> = {
+  Day:   { current: 200000, prev: 190000, currentLabel: 'Today',     changeLabel: 'vs yesterday' },
+  Week:  { current: 1020000, prev: 980000, currentLabel: 'This week', changeLabel: 'vs last week' },
+  Month: { current: 4500000, prev: 4200000, currentLabel: 'This month', changeLabel: 'vs last month' },
+};
 
-import React from 'react';
+// ─── Shared components ────────────────────────────────────────────────────────
+
+const LiveBadge = () => (
+  <Box style={{ backgroundColor: 'var(--color-live-badge)', color: 'white', padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+    LIVE
+  </Box>
+);
+
+const StatusPill = ({ label, sentiment }: { label: string; sentiment: 'positive' | 'negative' }) => (
+  <Box style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: '10px', backgroundColor: sentiment === 'positive' ? 'var(--color-positive-bg)' : 'var(--color-critical-bg)' }}>
+    <Text ff="Space Grotesk" size="11px" fw={600} c={sentiment === 'positive' ? 'var(--color-positive)' : 'var(--color-critical)'}>
+      {label}
+    </Text>
+  </Box>
+);
+
+// ─── Tab ──────────────────────────────────────────────────────────────────────
 
 export const OverviewTab = () => {
   const [revGrain, setRevGrain] = useState<Grain>('Month');
+  const stats = GRAIN_STATS[revGrain];
+  const pctChange = ((stats.current - stats.prev) / stats.prev * 100).toFixed(1);
 
   return (
-    <>
-      {/* ═══════════════════════════════════════════════════════ ZONE A */}
+    <Box p="24px">
       <KPIGrid>
-        {/* Row 1 */}
+
+        {/* ── Row 1: Three KPI cards ──────────────────────────── */}
 
         {/* W1 — Cash Balance */}
         <WidgetCard id="w1-cash" title="Total Cash Balance" colSpan={4} isZoneA>
-          {/* Anchored: primary metric top, trend anchors bottom */}
           <Box style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-            <Text ff="Albert Sans" fw={500} size="36px" c="#12131A" style={NUM}>₹12,45,000</Text>
-            <TrendBadge value={8.5} label="vs last month" />
+            <Text ff="Albert Sans" fw={700} size="32px" c="var(--color-text-primary)" className="num">
+              {formatCurrency(1245000)}
+            </Text>
+            <TrendBadge value={8.5} label="vs last month" type="cash" />
           </Box>
         </WidgetCard>
-
-        {/* W2 — P&L Compressed */}
-        <WidgetCard id="w2-pnl-compressed" title="P&L Summary" colSpan={4} isZoneA>
-          {/* Anchored: revenue/gross top, operating profit anchors bottom */}
-          <Box style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-            <Box style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
-              <Group justify="space-between">
-                <Text ff="Space Grotesk" size="13px" c="#6B6E7A">Revenue</Text>
-                <Text ff="Albert Sans" fw={500} size="14px" c="#12131A" style={NUM}>₹45,00,000</Text>
-              </Group>
-              <Group justify="space-between">
-                <Text ff="Space Grotesk" size="13px" c="#6B6E7A">Gross Profit</Text>
-                <Text ff="Albert Sans" fw={500} size="14px" c="#12131A" style={NUM}>₹18,50,000</Text>
-              </Group>
-            </Box>
-            <Box style={{ paddingTop: 11, borderTop: '1px solid rgba(18,19,26,0.08)' }}>
-              <Group justify="space-between">
-                <Text ff="Space Grotesk" fw={600} size="13px" c="#12131A">Operating Profit</Text>
-                <Text ff="Albert Sans" fw={600} size="15px" c="#12131A" style={NUM}>₹12,00,000</Text>
-              </Group>
-            </Box>
-          </Box>
-        </WidgetCard>
-
-        {/* W3 — Revenue Trend sparkline */}
-        <WidgetCard id="w3-rev-spark" title="Revenue Trend" colSpan={4} isZoneA>
-          <Sparkline
-            w="100%"
-            h={56}
-            data={[10, 20, 15, 30, 25, 45, 40]}
-            color="#2268D1"
-            curveType="monotone"
-            fillOpacity={0.12}
-          />
-          <Group mt={10} gap={5} align="baseline">
-            <Text ff="Albert Sans" fw={600} size="22px" c="#12131A" style={NUM}>₹45,00,000</Text>
-            <Text ff="Space Grotesk" size="12px" c="#8A8C96">this month</Text>
-          </Group>
-          <TrendBadge value={7.1} label="vs last month" />
-        </WidgetCard>
-
-        {/* Row 2 */}
 
         {/* W4 — DSO */}
-        <WidgetCard id="w4-dso" title="Days Sales Outstanding" colSpan={3} isZoneA>
-          <Text ff="Albert Sans" fw={500} size="36px" c="#12131A" mb={6} style={NUM}>45 days</Text>
-          <StatusChip label="15 days above target" color="red" />
-          <Box mt={10}><TrendBadge value={12} label="vs last month" /></Box>
+        <WidgetCard id="w4-dso" title="Days Sales Outstanding" colSpan={4} isZoneA>
+          <Box style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <Text ff="Albert Sans" fw={700} size="32px" c="var(--color-text-primary)" className="num">45 days</Text>
+            <StatusPill label="15 days above target" sentiment="negative" />
+            <Box mt={4}><TrendBadge value={12} label="vs last month" type="dso" /></Box>
+          </Box>
         </WidgetCard>
 
         {/* W5 — DPO */}
-        <WidgetCard id="w5-dpo" title="Days Payable Outstanding" colSpan={3} isZoneA>
-          <Text ff="Albert Sans" fw={500} size="36px" c="#12131A" mb={6} style={NUM}>38 days</Text>
-          <StatusChip label="Within target range" color="green" />
-          <Box mt={10}><TrendBadge value={-5} label="vs last month" /></Box>
+        <WidgetCard id="w5-dpo" title="Days Payable Outstanding" colSpan={4} isZoneA>
+          <Box style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <Text ff="Albert Sans" fw={700} size="32px" c="var(--color-text-primary)" className="num">38 days</Text>
+            <StatusPill label="Within target range" sentiment="positive" />
+            <Box mt={4}><TrendBadge value={-5} label="vs last month" /></Box>
+          </Box>
         </WidgetCard>
 
-        {/* W6 — Upcoming Payments */}
-        <WidgetCard
-          id="w6-upcoming"
-          title="Upcoming Payments"
-          colSpan={6}
-          isZoneA
-          titleExtra={
-            <Tooltip label="Always shows payments due relative to today." withArrow>
-              <Badge
-                color="teal"
-                variant="light"
-                size="xs"
-                style={{ cursor: 'default', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '0.04em' }}
-              >
-                Live
-              </Badge>
-            </Tooltip>
-          }
-        >
-          <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 4 }}>
-            {/* Overdue */}
-            <Box style={{ backgroundColor: 'rgba(224,52,43,0.06)', padding: '6px 10px', borderRadius: 0 }}>
-              <Text ff="Space Grotesk" size="11px" fw={600} c="#8A8C96" mb={8} style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                Overdue
-              </Text>
-              <Text ff="Albert Sans" size="28px" fw={600} c="#E0342B" style={NUM}>₹3,45,000</Text>
-              <Text ff="Space Grotesk" size="12px" c="#E0342B" mt={4} fw={500}>12 bills</Text>
+        {/* ── Row 2: Upcoming Payments — full width ───────────── */}
+
+        <WidgetCard id="w6-upcoming" title="Upcoming Payments" colSpan={12} isZoneA titleExtra={<LiveBadge />}>
+          <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+            <Box style={{ backgroundColor: 'var(--color-critical-bg)', padding: '14px 18px', borderRadius: 'var(--radius-inner)', border: '1px solid #FECACA' }}>
+              <Text ff="Space Grotesk" size="10px" fw={600} c="var(--color-critical)" mb={6} style={{ letterSpacing: '0.8px' }}>OVERDUE</Text>
+              <Text ff="Albert Sans" size="22px" fw={700} c="var(--color-critical)" className="num">{formatCurrency(345000)}</Text>
+              <Text ff="Space Grotesk" size="12px" c="var(--color-critical)" fw={500} mt={2}>12 bills</Text>
             </Box>
-            {/* 0–7 days */}
-            <Box style={{ backgroundColor: '#F5F6F8', padding: '6px 10px', borderRadius: 0, border: '1px solid rgba(18,19,26,0.06)' }}>
-              <Text ff="Space Grotesk" size="11px" fw={600} c="#8A8C96" mb={8} style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                0 – 7 days
-              </Text>
-              <Text ff="Albert Sans" size="28px" fw={600} c="#12131A" style={NUM}>₹1,80,000</Text>
-              <Text ff="Space Grotesk" size="12px" c="#8A8C96" mt={4}>5 bills</Text>
+            <Box style={{ backgroundColor: 'var(--color-bg-hover)', padding: '14px 18px', borderRadius: 'var(--radius-inner)', border: '1px solid var(--color-border)' }}>
+              <Text ff="Space Grotesk" size="10px" fw={600} c="var(--color-text-muted)" mb={6} style={{ letterSpacing: '0.8px' }}>DUE IN 0–7 DAYS</Text>
+              <Text ff="Albert Sans" size="22px" fw={700} c="var(--color-text-primary)" className="num">{formatCurrency(180000)}</Text>
+              <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)" mt={2}>5 bills</Text>
             </Box>
-            {/* 8–15 days */}
-            <Box style={{ backgroundColor: '#F5F6F8', padding: '6px 10px', borderRadius: 0, border: '1px solid rgba(18,19,26,0.06)' }}>
-              <Text ff="Space Grotesk" size="11px" fw={600} c="#8A8C96" mb={8} style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                8 – 15 days
-              </Text>
-              <Text ff="Albert Sans" size="28px" fw={600} c="#12131A" style={NUM}>₹4,20,000</Text>
-              <Text ff="Space Grotesk" size="12px" c="#8A8C96" mt={4}>8 bills</Text>
+            <Box style={{ backgroundColor: 'var(--color-bg-hover)', padding: '14px 18px', borderRadius: 'var(--radius-inner)', border: '1px solid var(--color-border)' }}>
+              <Text ff="Space Grotesk" size="10px" fw={600} c="var(--color-text-muted)" mb={6} style={{ letterSpacing: '0.8px' }}>DUE IN 8–15 DAYS</Text>
+              <Text ff="Albert Sans" size="22px" fw={700} c="var(--color-text-primary)" className="num">{formatCurrency(420000)}</Text>
+              <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)" mt={2}>8 bills</Text>
             </Box>
           </Box>
         </WidgetCard>
-      </KPIGrid>
 
-      {/* ═══════════════════════════════════════════════════════ AI INSIGHTS */}
-      <AIInsightsStrip />
+        {/* ── Row 3: AI Insights ──────────────────────────────── */}
+        <AIInsightsAccordion />
 
-      {/* ═══════════════════════════════════════════════════════ ZONE B */}
-      <KPIGrid>
-        {/* Row 3 */}
+        {/* ── Row 4: P&L + Revenue Trend ──────────────────────── */}
 
-        {/* W7 — P&L Full */}
+        {/* W7 — P&L Statement */}
         <WidgetCard id="w7-pnl-full" title="P&L Statement" colSpan={4}>
-          {/* Anchored: statement rows flow from top, Operating Profit is the literal bottom line */}
-          <Box style={{ display: 'flex', flexDirection: 'column', height: '100%', marginTop: 4 }}>
-            <Box style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <FinRow label={<Text ff="Space Grotesk" size="13px" c="#6B6E7A">Revenue</Text>} value="₹45,00,000" />
-              <FinRow label={<Text ff="Space Grotesk" size="13px" c="#6B6E7A">COGS</Text>} value="₹26,50,000" />
-
-              {/* Gross Profit — subtotal */}
-              <FinRow
-                topBorder
-                weight="total"
-                label={
-                  <Group gap={6} align="center">
-                    <Text ff="Space Grotesk" fw={600} size="13px" c="#12131A">Gross Profit</Text>
-                    <Box style={{ backgroundColor: 'rgba(20,161,102,0.12)', padding: '2px 6px', borderRadius: 0, fontSize: 11, fontWeight: 600, color: '#14A166', fontFamily: "'Space Grotesk', sans-serif" }}>
-                      41%
-                    </Box>
-                  </Group>
-                }
-                value="₹18,50,000"
-              />
-
-              <FinRow label={<Text ff="Space Grotesk" size="13px" c="#6B6E7A">Operating Expense</Text>} value="₹6,50,000" />
-            </Box>
-
-            {/* Flex spacer — Operating Profit anchors to card bottom */}
-            <Box style={{ flex: 1 }} />
-
-            {/* Operating Profit — bottom line, literally */}
-            <FinRow
-              topBorder
-              weight="total"
-              label={
-                <Tooltip label="Revenue minus cost of goods and operating expenses, before tax." withArrow multiline w={210}>
-                  <Text
-                    ff="Space Grotesk"
-                    fw={600}
-                    size="13px"
-                    c="#12131A"
-                    style={{ cursor: 'help', borderBottom: '1px dashed rgba(18,19,26,0.25)', paddingBottom: 1 }}
-                  >
-                    Operating Profit
-                  </Text>
-                </Tooltip>
-              }
-              value="₹12,00,000"
-            />
+          <Box style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Group justify="space-between">
+              <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Revenue</Text>
+              <Text ff="Albert Sans" fw={400} size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(4500000)}</Text>
+            </Group>
+            <Group justify="space-between">
+              <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">COGS</Text>
+              <Text ff="Albert Sans" fw={400} size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(2650000)}</Text>
+            </Group>
+            <Group justify="space-between" pt={8} style={{ borderTop: '1px solid var(--color-border)' }}>
+              <Group gap={6}>
+                <Text ff="Space Grotesk" fw={600} size="13px" c="var(--color-text-primary)">Gross Profit</Text>
+                <Box style={{ backgroundColor: 'var(--color-positive-bg)', padding: '2px 6px', borderRadius: 'var(--radius-badge)' }}>
+                  <Text ff="Space Grotesk" fw={600} size="10px" c="var(--color-positive)">41%</Text>
+                </Box>
+              </Group>
+              <Text ff="Albert Sans" fw={600} size="14px" c="var(--color-text-primary)" className="num">{formatCurrency(1850000)}</Text>
+            </Group>
+            <Group justify="space-between">
+              <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Operating Expense</Text>
+              <Text ff="Albert Sans" fw={400} size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(650000)}</Text>
+            </Group>
+            <Box style={{ flex: 1, minHeight: 20 }} />
+            <Group justify="space-between" pt={12} style={{ borderTop: '1px solid var(--color-border)' }}>
+              <Tooltip label="Revenue minus cost of goods and operating expenses, before tax.">
+                <Text ff="Space Grotesk" fw={700} size="14px" c="var(--color-text-primary)" style={{ cursor: 'help', borderBottom: '1px dashed var(--color-border-strong)' }}>
+                  Operating Profit
+                </Text>
+              </Tooltip>
+              <Text ff="Albert Sans" fw={700} size="16px" c="var(--color-text-primary)" className="num">{formatCurrency(1200000)}</Text>
+            </Group>
           </Box>
         </WidgetCard>
 
-        {/* W8 — Revenue Trend Full */}
-        <ChartCard
+        {/* W8 — Revenue Trend (improved) */}
+        <WidgetCard
           id="w8-rev-full"
           title="Revenue Trend"
           colSpan={8}
-          height={230}
-          headerExtra={<GrainToggle value={revGrain} onChange={setRevGrain} />}
+          titleExtra={<GrainToggle value={revGrain} onChange={setRevGrain} />}
         >
-          <LineChart
-            h={230}
+          {/* Stat header row */}
+          <Group justify="space-between" align="flex-end" mb={20}>
+            <Box>
+              <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)" mb={2}>{stats.currentLabel}</Text>
+              <Group gap={10} align="baseline">
+                <Text ff="Albert Sans" fw={700} size="28px" c="var(--color-text-primary)" className="num">
+                  {formatCurrency(stats.current)}
+                </Text>
+                <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px', borderRadius: 10, backgroundColor: Number(pctChange) >= 0 ? 'var(--color-positive-bg)' : 'var(--color-critical-bg)' }}>
+                  <Text ff="Space Grotesk" fw={600} size="12px" c={Number(pctChange) >= 0 ? 'var(--color-positive)' : 'var(--color-critical)'}>
+                    {Number(pctChange) >= 0 ? '↑' : '↓'} {Math.abs(Number(pctChange))}% {stats.changeLabel}
+                  </Text>
+                </Box>
+              </Group>
+            </Box>
+
+            {/* Mini legend */}
+            <Group gap={16}>
+              {REVENUE_DATA[revGrain].slice(-2).map((d, i) => (
+                <Box key={i} style={{ textAlign: 'right' }}>
+                  <Text ff="Space Grotesk" size="10px" c="var(--color-text-ghost)">{d.date}</Text>
+                  <Text ff="Albert Sans" fw={600} size="13px" c={i === 1 ? 'var(--color-accent-blue)' : 'var(--color-text-muted)'} className="num">
+                    {formatCurrency(d.revenue)}
+                  </Text>
+                </Box>
+              ))}
+            </Group>
+          </Group>
+
+          {/* Area chart */}
+          <AreaChart
+            h={180}
             data={REVENUE_DATA[revGrain]}
             dataKey="date"
-            series={[{ name: 'revenue', color: '#2268D1', label: 'Revenue' }]}
+            series={[{
+              name: 'revenue',
+              color: '#2563EB',
+              label: 'Revenue',
+            }]}
             curveType="monotone"
-            withDots={false}
-            gridAxis="x"
+            withDots
+            withGradient
+            fillOpacity={0.18}
+            gridAxis="y"
             tickLine="none"
+            strokeWidth={2.5}
+            dotProps={{ r: 3, fill: '#2563EB', strokeWidth: 0 }}
+            activeDotProps={{ r: 5, fill: '#2563EB', stroke: '#EFF6FF', strokeWidth: 2 }}
+            valueFormatter={(val) => formatCurrency(val as number)}
             styles={{
-              axis: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 11, fill: '#8A8C96' },
+              axis: { fontFamily: 'Space Grotesk', fontSize: 11, fill: 'var(--color-text-ghost)' },
             }}
           />
-        </ChartCard>
+        </WidgetCard>
 
-        {/* Row 4 */}
+        {/* ── Row 5: Top Customers ────────────────────────────── */}
 
-        {/* W9 — Top Customers by Revenue */}
-        <WidgetCard id="w9-top-customers" title="Top Customers by Revenue" colSpan={12} needsReview>
-          <Box style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <CustomerBar name="Acme Corp"    amount="₹12,00,000" percent={65} color="#2268D1" />
-            <CustomerBar name="Globex Inc"   amount="₹8,50,000"  percent={48} color="#2268D1" opacity={0.55} />
-            <CustomerBar name="Soylent Corp" amount="₹4,20,000"  percent={28} color="#2268D1" opacity={0.35} />
-            <CustomerBar name="Initech"      amount="₹1,80,000"  percent={12} color="#2268D1" opacity={0.2} />
+        {/* W9 — Top Customers */}
+        <WidgetCard id="w9-top-customers" title="Top Customers by Revenue" colSpan={12}>
+          <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+            {[
+              { name: 'Acme Corp',    amount: 1200000, percent: 65, share: '26.7%', trend: '+8.2%', up: true  },
+              { name: 'Globex Inc',   amount: 850000,  percent: 48, share: '18.9%', trend: '+3.1%', up: true  },
+              { name: 'Soylent Corp', amount: 420000,  percent: 28, share: '9.3%',  trend: '−2.4%', up: false },
+              { name: 'Initech',      amount: 180000,  percent: 12, share: '4.0%',  trend: '+0.9%', up: true  },
+            ].map((c) => (
+              <Box key={c.name} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <Group justify="space-between" align="flex-start">
+                  <Text ff="Space Grotesk" fw={500} size="13px" c="var(--color-text-secondary)">{c.name}</Text>
+                  <Box style={{ display: 'inline-flex', padding: '1px 6px', borderRadius: 4, backgroundColor: c.up ? 'var(--color-positive-bg)' : 'var(--color-critical-bg)' }}>
+                    <Text ff="Space Grotesk" size="11px" fw={500} c={c.up ? 'var(--color-positive)' : 'var(--color-critical)'}>{c.trend}</Text>
+                  </Box>
+                </Group>
+                <Group justify="space-between" align="baseline">
+                  <Text ff="Albert Sans" fw={700} size="18px" c="var(--color-text-primary)" className="num">{formatCurrency(c.amount)}</Text>
+                  <Text ff="Space Grotesk" size="12px" c="var(--color-text-ghost)">{c.share}</Text>
+                </Group>
+                {/* Stacked bar */}
+                <Box style={{ height: 6, backgroundColor: 'var(--color-bg-hover)', borderRadius: 3, overflow: 'hidden' }}>
+                  <Box style={{ height: '100%', width: `${c.percent}%`, background: `linear-gradient(90deg, #2563EB, #60A5FA)`, borderRadius: 3 }} />
+                </Box>
+              </Box>
+            ))}
           </Box>
         </WidgetCard>
+
       </KPIGrid>
-    </>
-  );
-};
-
-// ─── Status chip (replaces plain text for target notes) ──────────────────────
-
-function StatusChip({ label, color }: { label: string; color: 'red' | 'green' | 'amber' }) {
-  const configs = {
-    red:   { bg: 'rgba(224,52,43,0.08)',   text: '#C0302A' },
-    green: { bg: 'rgba(20,161,102,0.09)',  text: '#0E7A4D' },
-    amber: { bg: 'rgba(217,119,6,0.09)',   text: '#B45309' },
-  };
-  const { bg, text } = configs[color];
-  return (
-    <Box style={{ display: 'inline-flex', backgroundColor: bg, padding: '3px 8px', borderRadius: 0 }}>
-      <Text ff="Space Grotesk" size="12px" fw={500} c={text}>{label}</Text>
     </Box>
   );
-}
+};

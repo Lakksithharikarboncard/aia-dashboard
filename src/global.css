@@ -3,10 +3,42 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap');
 
+:root {
+  --color-bg-page:       #F0F2F5;
+  --color-bg-card:       #FFFFFF;
+  --color-bg-hover:      #F9FAFB;
+  --color-border:        #E5E7EB;
+  --color-border-strong: #D1D5DB;
+
+  --color-text-primary:  #0F1117;
+  --color-text-secondary:#374151;
+  --color-text-muted:    #6B7280;
+  --color-text-ghost:    #9CA3AF;
+
+  --color-accent-blue:   #2563EB;
+  --color-accent-blue-light: #EFF6FF;
+
+  --color-positive:      #16A34A;
+  --color-positive-bg:   #F0FDF4;
+  --color-warning:       #D97706;
+  --color-warning-bg:    #FFFBEB;
+  --color-critical:      #DC2626;
+  --color-critical-bg:   #FEF2F2;
+  --color-neutral:       #6B7280;
+
+  --color-live-badge:    #0D9488;
+
+  --radius-card:  12px;
+  --radius-inner:  8px;
+  --radius-badge:  4px;
+  --shadow-card:   0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-panel:  -4px 0 24px rgba(0,0,0,0.08);
+}
+
 /* ─── Base ───────────────────────────────────────────────── */
 
 body {
-  background: #E2E5EA;
+  background: var(--color-bg-page);
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
@@ -15,7 +47,6 @@ body {
 
 /* ─── Typography helpers ─────────────────────────────────── */
 
-/* Tabular numerics — apply to any financial number */
 .num {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' on, 'lnum' on;
@@ -41,45 +72,42 @@ body {
 
 /* ─── Recharts / Mantine chart overrides ─────────────────── */
 
-/* Smooth bar chart corners */
-.recharts-bar-rectangle path {
-  rx: 2;
-}
-
-/* Subtle grid lines */
 .recharts-cartesian-grid line {
-  stroke: rgba(18, 19, 26, 0.06) !important;
+  stroke: #E5E7EB !important;
+  stroke-dasharray: 3 3;
+  opacity: 0.6;
 }
 
-/* Axis text */
+.recharts-cartesian-axis-line {
+  display: none !important;
+}
+
 .recharts-text {
   font-family: 'Space Grotesk', sans-serif !important;
   font-size: 11px !important;
-  fill: #8A8C96 !important;
+  fill: #9CA3AF !important;
 }
 
-/* Tooltip */
 .recharts-tooltip-wrapper .recharts-default-tooltip {
   font-family: 'Space Grotesk', sans-serif !important;
   font-size: 12px !important;
-  border-radius: 0;
-  border: 1px solid rgba(18,19,26,0.1) !important;
-  box-shadow: 0 4px 12px rgba(18,19,26,0.1) !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--color-border) !important;
+  background: #fff !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+  padding: 8px 12px !important;
 }
 
-/* Legend text */
 .recharts-legend-item-text {
   font-family: 'Space Grotesk', sans-serif !important;
   font-size: 12px !important;
-  color: #6B6E7A !important;
+  color: #6B7280 !important;
 }
-
-/* ─── Mantine Select dropdown ────────────────────────────── */
 
 .mantine-Select-dropdown {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 13px;
-  border-radius: 0;
-  border: 1px solid rgba(18,19,26,0.1);
-  box-shadow: 0 4px 16px rgba(18,19,26,0.1);
+  border-radius: var(--radius-inner);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
 }

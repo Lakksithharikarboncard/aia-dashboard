@@ -27,69 +27,48 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       padding="md"
       styles={{
         main: {
-          background: '#E2E5EA',
-          minWidth: '1280px',
-          overflowX: 'auto',
+          background: 'var(--color-bg-page)',
+          minHeight: '100vh',
+          paddingRight: isPanelOpen ? 360 : 0,
+          transition: 'padding-right 0.2s ease-out',
         },
       }}
     >
       {/* ─── Header ─────────────────────────────────────────── */}
       <AppShell.Header
         style={{
-          backgroundColor: '#FCFCFC',
-          borderBottom: '1px solid rgba(18,19,26,0.08)',
+          backgroundColor: 'white',
+          borderBottom: '1px solid var(--color-border)',
           zIndex: 200,
         }}
       >
-        <Group h="100%" px={20} justify="space-between" wrap="nowrap">
+        <Group h="100%" px={24} justify="space-between" wrap="nowrap">
           {/* Left: Brand + Org + Nav */}
           <Group gap={0} align="stretch" wrap="nowrap" style={{ height: '100%' }}>
             {/* Wordmark */}
-            <Box style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingRight: 16 }}>
+            <Box style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingRight: 20 }}>
               <Text
                 ff="Albert Sans"
-                fw={700}
+                fw={800}
                 size="18px"
-                c="#0E1018"
-                style={{ letterSpacing: '-0.03em', lineHeight: 1.1 }}
+                c="var(--color-text-primary)"
+                style={{ letterSpacing: '-0.04em', lineHeight: 1 }}
               >
                 AIA
               </Text>
               <Text
                 ff="Space Grotesk"
-                size="9px"
-                c="#8A8C96"
-                fw={500}
-                style={{ letterSpacing: '0.12em', textTransform: 'uppercase', lineHeight: 1, marginTop: 2 }}
+                size="10px"
+                c="var(--color-text-ghost)"
+                fw={600}
+                style={{ letterSpacing: '0.1em', textTransform: 'uppercase', lineHeight: 1, marginTop: 2 }}
               >
-                AI Accountant
+                Accountant
               </Text>
             </Box>
 
             {/* Divider */}
-            <Box style={{ width: 1, height: 28, backgroundColor: 'rgba(18,19,26,0.1)', alignSelf: 'center', marginRight: 16 }} />
-
-            {/* Org context */}
-            <Group gap={7} align="center" wrap="nowrap" style={{ marginRight: 24 }}>
-              <Box
-                style={{
-                  width: 22,
-                  height: 22,
-                  borderRadius: 0,
-                  backgroundColor: '#2268D1',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <Text ff="Albert Sans" fw={700} size="10px" c="white" style={{ lineHeight: 1 }}>A</Text>
-              </Box>
-              <Text ff="Space Grotesk" size="13px" fw={500} c="#12131A">Acme Corp</Text>
-            </Group>
-
-            {/* Divider */}
-            <Box style={{ width: 1, height: 28, backgroundColor: 'rgba(18,19,26,0.1)', alignSelf: 'center', marginRight: 4 }} />
+            <Box style={{ width: 1, height: 24, backgroundColor: 'var(--color-border)', alignSelf: 'center', marginRight: 20 }} />
 
             {/* Nav tabs */}
             {NAV_ITEMS.map(({ tab, icon: Icon, label }) => (
@@ -97,7 +76,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                 key={tab}
                 active={activeTab === tab}
                 label={label}
-                icon={<Icon size={15} strokeWidth={1.75} />}
+                icon={<Icon size={16} strokeWidth={2} />}
                 onClick={() => { setActiveTab(tab); closePanel(); }}
               />
             ))}
@@ -107,8 +86,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
           <Select
             placeholder="This Month"
             data={[
-              { group: 'Calendar', items: ['Last 7 Days', 'This Month', 'Last Month', 'This Quarter', 'This Year'] },
-              { group: 'Fiscal Quarters', items: ['Q1 Apr–Jun', 'Q2 Jul–Sep', 'Q3 Oct–Dec', 'Q4 Jan–Mar'] },
+              'Last 7 Days', 'This Month', 'Last Month', 'This Quarter', 'This Year'
             ]}
             value={dateRange}
             onChange={(val) => val && setDateRange(val)}
@@ -116,15 +94,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             w={160}
             styles={{
               input: {
-                fontFamily: "'Space Grotesk', sans-serif",
+                fontFamily: 'Space Grotesk',
                 fontSize: 13,
-                fontWeight: 500,
-                backgroundColor: '#F5F6F8',
-                border: '1px solid rgba(18,19,26,0.1)',
-                borderRadius: 0,
-                color: '#12131A',
+                fontWeight: 600,
+                backgroundColor: 'var(--color-bg-hover)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-inner)',
+                color: 'var(--color-text-primary)',
                 height: 34,
-                minHeight: 34,
               },
             }}
           />
@@ -133,17 +110,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
       {/* ─── Main content ────────────────────────────────────── */}
       <AppShell.Main>
-        <Box style={{ maxWidth: 1400, margin: '0 auto', width: '100%' }}>
-          <Box
-            style={{
-              display: 'grid',
-              gridTemplateColumns: isPanelOpen ? 'repeat(9, 1fr)' : 'repeat(12, 1fr)',
-              gap: '20px',
-              transition: 'grid-template-columns 0.2s ease',
-            }}
-          >
-            {children}
-          </Box>
+        <Box style={{ maxWidth: 1440, margin: '0 auto', width: '100%' }}>
+          {children}
         </Box>
       </AppShell.Main>
 
@@ -152,8 +120,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     </AppShell>
   );
 };
-
-// ─── Nav tab with bottom-border active indicator ──────────────────────────────
 
 function NavTab({
   icon,
@@ -174,12 +140,12 @@ function NavTab({
           height: '100%',
           display: 'flex',
           alignItems: 'center',
-          gap: 7,
-          padding: '0 14px',
-          color: active ? '#12131A' : '#8A8C96',
-          fontFamily: "'Space Grotesk', sans-serif",
+          gap: 8,
+          padding: '0 16px',
+          color: active ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+          fontFamily: 'Space Grotesk',
           fontSize: 13,
-          fontWeight: active ? 600 : 400,
+          fontWeight: active ? 600 : 500,
           transition: 'color 0.15s ease',
           whiteSpace: 'nowrap',
         }}
@@ -188,18 +154,19 @@ function NavTab({
         {label}
       </UnstyledButton>
       {/* Bottom active indicator */}
-      <Box
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 14,
-          right: 14,
-          height: 2,
-          backgroundColor: active ? '#2268D1' : 'transparent',
-          borderRadius: 0,
-          transition: 'background-color 0.15s ease',
-        }}
-      />
+      {active && (
+        <Box
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 16,
+            right: 16,
+            height: 2,
+            backgroundColor: 'var(--color-accent-blue)',
+            borderRadius: '2px 2px 0 0',
+          }}
+        />
+      )}
     </Box>
   );
 }

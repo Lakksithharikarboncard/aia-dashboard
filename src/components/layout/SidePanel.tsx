@@ -1,582 +1,1206 @@
-import { useEffect } from 'react';
-import { Box, Group, Text, UnstyledButton, ScrollArea, Button } from '@mantine/core';
-import { IconX, IconExternalLink } from '@tabler/icons-react';
+import { useEffect, useState } from 'react';
+import { Box, Group, Text, UnstyledButton, ScrollArea } from '@mantine/core';
+import { IconX } from '@tabler/icons-react';
 import { useDashboard } from '../../context/DashboardContext';
+import { formatCurrency } from '../../utils/formatters';
 
-// ─── Widget metadata ──────────────────────────────────────────────────────────
+// ─── Display names map ───────────────────────────────────────────────────────
 
-const WIDGET_TITLES: Record<string, string> = {
-  'w1-cash': 'Cash Balance',
+const WIDGET_DISPLAY_NAMES: Record<string, string> = {
+  'w1-cash':           'Cash Balance',
   'w2-pnl-compressed': 'P&L Summary',
-  'w3-rev-spark': 'Revenue Trend',
-  'w4-dso': 'Days Sales Outstanding',
-  'w5-dpo': 'Days Payable Outstanding',
-  'w6-upcoming': 'Upcoming Payments',
-  'w7-pnl-full': 'P&L Statement',
-  'w8-rev-full': 'Revenue Trend',
-  'w9-top-customers': 'Top Customers by Revenue',
-  'w10-cash-full': 'Cash Balance',
-  'w11-cash-runway': 'Cash Runway',
-  'w12-cash-flow': 'Cash Inflow vs Outflow',
+  'w3-rev-spark':      'Revenue Trend',
+  'w4-dso':            'Days Sales Outstanding',
+  'w5-dpo':            'Days Payable Outstanding',
+  'w6-upcoming':       'Upcoming Payments',
+  'w7-pnl-full':       'P&L Statement',
+  'w8-rev-full':       'Revenue Trend',
+  'w9-top-customers':  'Top Customers',
+  'w10-cash-full':     'Cash Balance',
+  'w12-cash-flow':     'Cash Inflow vs Outflow',
   'w13-upcoming-cash': 'Upcoming Payments',
-  'w14-ar-out': 'AR Outstanding',
-  'w15-dso-full': 'Days Sales Outstanding',
-  'w16-ar-aging': 'AR Aging',
-  'w17-top-ar': 'Top Customers — Overdue AR',
-  'w18-ap-out': 'AP Outstanding',
-  'w19-dpo-full': 'Days Payable Outstanding',
-  'w20-ap-aging': 'AP Aging',
-  'w21-vendor-spend': 'Vendor Spend Concentration',
-  'w22-upcoming-ap': 'Upcoming Payments (AP)',
+  'w14-ar-out':        'AR Outstanding',
+  'w15-dso':           'Days Sales Outstanding',
+  'w15-dso-full':      'Days Sales Outstanding',
+  'w16-ar-aging':      'AR Aging',
+  'w17-top-ar':        'Top Customers — Overdue AR',
+  'w18-ap-out':        'AP Outstanding',
+  'w19-dpo':           'Days Payable Outstanding',
+  'w19-dpo-full':      'Days Payable Outstanding',
+  'w20-ap-aging':      'AP Aging',
+  'w21-vendor-spend':  'Vendor Spend Concentration',
+  'w22-upcoming-ap':   'Upcoming Payments',
 };
 
-// Zone A widgets — Overview only, no Detail View available
-const ZONE_A_WIDGETS = new Set([
-  'w1-cash', 'w2-pnl-compressed', 'w3-rev-spark',
-  'w4-dso', 'w5-dpo', 'w6-upcoming',
-]);
+// ─── Shared UI Components ────────────────────────────────────────────────────
 
-// Per-widget CTA config
-const WIDGET_CTAS: Record<string, { label: string; tab?: string }> = {
-  'w1-cash':            { label: 'Go to Cash Tab', tab: 'cash' },
-  'w2-pnl-compressed':  { label: 'See Full P&L Below' },
-  'w3-rev-spark':       { label: 'See Full Trend Below' },
-  'w4-dso':             { label: 'Go to Payables & Receivables', tab: 'payables' },
-  'w5-dpo':             { label: 'Go to Payables & Receivables', tab: 'payables' },
-  'w6-upcoming':        { label: 'Go to Cash Tab', tab: 'cash' },
-  'w7-pnl-full':        { label: 'View P&L Report' },
-  'w8-rev-full':        { label: 'View P&L Report' },
-  'w9-top-customers':   { label: 'View Customer Ledger' },
-  'w10-cash-full':      { label: 'View All Bank Accounts' },
-  'w11-cash-runway':    { label: 'View Cash Flow Statement' },
-  'w12-cash-flow':      { label: 'View Cash Flow Statement' },
-  'w13-upcoming-cash':  { label: 'View Bill Due Calendar' },
-  'w14-ar-out':         { label: 'View All Invoices' },
-  'w15-dso-full':       { label: 'View Overdue Customers' },
-  'w16-ar-aging':       { label: 'View Overdue Customers' },
-  'w17-top-ar':         { label: 'View Overdue Customers' },
-  'w18-ap-out':         { label: 'View All Bills' },
-  'w19-dpo-full':       { label: 'View Overdue Bills' },
-  'w20-ap-aging':       { label: 'View Overdue Bills' },
-  'w21-vendor-spend':   { label: 'View Vendor Bills' },
-  'w22-upcoming-ap':    { label: 'View Bill Due Calendar' },
-};
-
-// ─── Shared panel row ─────────────────────────────────────────────────────────
-
-const PanelRow = ({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) => (
-  <Group
-    justify="space-between"
-    py={9}
-    style={{ borderBottom: '1px solid rgba(18,19,26,0.06)' }}
-  >
-    <Text ff="Space Grotesk" size="sm" c={highlight ? '#12131A' : '#88898C'} fw={highlight ? 500 : 400}>
-      {label}
-    </Text>
-    <Text ff="Albert Sans" fw={highlight ? 600 : 500} size="sm" c="#12131A">
-      {value}
-    </Text>
-  </Group>
-);
-
-const PanelSection = ({ title, first = false }: { title: string; first?: boolean }) => (
+const SectionLabel = ({ label }: { label: string }) => (
   <Text
     ff="Space Grotesk"
-    size="xs"
-    c="dimmed"
-    mt={first ? 4 : 'md'}
-    mb={6}
-    style={{ textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600 }}
+    size="10px"
+    fw={600}
+    c="var(--color-text-ghost)"
+    style={{ textTransform: 'uppercase', letterSpacing: '0.8px' }}
+    mb={10}
   >
-    {title}
+    {label}
   </Text>
 );
 
-// ─── Summary content per widget ───────────────────────────────────────────────
+const PanelSection = ({ children, last }: { children: React.ReactNode; last?: boolean }) => (
+  <Box style={{
+    padding: '18px 0',
+    borderBottom: last ? 'none' : '1px solid var(--color-border)',
+    paddingBottom: last ? 24 : 18,
+  }}>
+    {children}
+  </Box>
+);
 
-function SummaryContent({ widgetId }: { widgetId: string }) {
-  switch (widgetId) {
-    case 'w1-cash':
-      return (
-        <Box>
-          <PanelSection title="Account Balances" />
-          <PanelRow label="HDFC Current A/c" value="₹8,20,000" />
-          <PanelRow label="SBI Savings A/c" value="₹4,25,000" />
-          <PanelRow label="Total Cash" value="₹12,45,000" highlight />
-          <PanelRow label="Change vs Period Start" value="+₹98,000" />
-          <Box mt="md" style={{ backgroundColor: '#FEF3C7', padding: '6px 10px', borderRadius: 0 }}>
-            <Text ff="Space Grotesk" size="xs" c="#D97706" fw={500}>
-              HDFC A/c: Reconciliation pending for 3 transactions
-            </Text>
-          </Box>
-        </Box>
-      );
-    case 'w2-pnl-compressed':
-      return (
-        <Box>
-          <PanelSection title="This Month vs Last Month" />
-          <PanelRow label="Revenue" value="₹45,00,000" />
-          <PanelRow label="vs Last Month" value="₹40,00,000" />
-          <PanelRow label="Gross Profit" value="₹18,50,000" />
-          <PanelRow label="Operating Profit" value="₹12,00,000" highlight />
-          <PanelRow label="Prior Period Op. Profit" value="₹9,50,000" />
-        </Box>
-      );
-    case 'w3-rev-spark':
-      return (
-        <Box>
-          <PanelSection title="Monthly Revenue" />
-          {[['Jan', '₹30,00,000'], ['Feb', '₹35,00,000'], ['Mar', '₹32,00,000'],
-            ['Apr', '₹40,00,000'], ['May', '₹42,00,000'], ['Jun', '₹45,00,000']].map(([m, v]) => (
-            <PanelRow key={m} label={m} value={v} highlight={m === 'Jun'} />
-          ))}
-        </Box>
-      );
-    case 'w4-dso':
-      return (
-        <Box>
-          <PanelSection title="DSO Summary" />
-          <PanelRow label="Current DSO" value="45 days" highlight />
-          <PanelRow label="Prior Period DSO" value="40 days" />
-          <PanelRow label="Target" value="30 days" />
-          <PanelSection title="Top Contributors" />
-          <PanelRow label="Acme Corp" value="14 days" />
-          <PanelRow label="Globex Inc" value="8 days" />
-          <PanelRow label="Soylent Corp" value="5 days" />
-        </Box>
-      );
-    case 'w5-dpo':
-      return (
-        <Box>
-          <PanelSection title="DPO Summary" />
-          <PanelRow label="Current DPO" value="38 days" highlight />
-          <PanelRow label="Prior Period DPO" value="40 days" />
-          <PanelRow label="Target Range" value="30 – 45 days" />
-          <PanelSection title="Top Contributors" />
-          <PanelRow label="Vendor X" value="₹2,10,000 outstanding" />
-          <PanelRow label="Supplier Y" value="₹98,000 outstanding" />
-        </Box>
-      );
-    case 'w6-upcoming':
-      return (
-        <Box>
-          <PanelSection title="Overdue Bills" />
-          <PanelRow label="Vendor X — Bill #1042" value="₹1,40,000" highlight />
-          <PanelRow label="Supplier Y — Bill #892" value="₹90,000" />
-          <PanelRow label="Agency Z — Bill #331" value="₹72,000" />
-          <PanelRow label="9 more bills" value="₹43,000" />
-          <Box mt="md" style={{ backgroundColor: 'rgba(248,43,43,0.07)', padding: '6px 10px', borderRadius: 0 }}>
-            <Text ff="Space Grotesk" size="xs" c="#F82B2B" fw={500}>
-              12 bills · Total overdue: ₹3,45,000
-            </Text>
-          </Box>
-        </Box>
-      );
-    case 'w7-pnl-full':
-      return (
-        <Box>
-          <PanelSection title="Current vs Prior Period" />
-          <PanelRow label="Revenue" value="₹45,00,000" />
-          <PanelRow label="COGS" value="₹26,50,000" />
-          <PanelRow label="Gross Profit (41%)" value="₹18,50,000" highlight />
-          <PanelRow label="Operating Expense" value="₹6,50,000" />
-          <PanelRow label="Operating Profit" value="₹12,00,000" highlight />
-          <PanelSection title="Prior Period" />
-          <PanelRow label="Revenue" value="₹40,00,000" />
-          <PanelRow label="Operating Profit" value="₹9,50,000" />
-        </Box>
-      );
-    case 'w8-rev-full':
-      return (
-        <Box>
-          <PanelSection title="Monthly Revenue Breakdown" />
-          {[['Jan', '₹30,00,000'], ['Feb', '₹35,00,000'], ['Mar', '₹32,00,000'],
-            ['Apr', '₹40,00,000'], ['May', '₹42,00,000'], ['Jun', '₹45,00,000']].map(([m, v]) => (
-            <PanelRow key={m} label={m} value={v} highlight={m === 'Jun'} />
-          ))}
-          <PanelRow label="Total (6M)" value="₹2,24,00,000" highlight />
-        </Box>
-      );
-    case 'w9-top-customers':
-      return (
-        <Box>
-          <PanelSection title="Ranked by Revenue" />
-          <PanelRow label="Acme Corp" value="₹12,00,000 · 65%" highlight />
-          <PanelRow label="Globex Inc" value="₹8,50,000 · 46%" />
-          <PanelRow label="Soylent Corp" value="₹4,20,000 · 23%" />
-          <PanelRow label="Initech" value="₹1,80,000 · 10%" />
-          <PanelRow label="Unattributed" value="₹50,000 · 3%" />
-        </Box>
-      );
-    case 'w10-cash-full':
-      return (
-        <Box>
-          <PanelSection title="Account Balances" />
-          <PanelRow label="HDFC Current A/c" value="₹8,20,000" />
-          <PanelRow label="SBI Savings A/c" value="₹4,25,000" />
-          <PanelRow label="Total Cash" value="₹12,45,000" highlight />
-          <PanelRow label="Change vs Period Start" value="+₹98,000" />
-          <Box mt="md" style={{ backgroundColor: '#FEF3C7', padding: '6px 10px', borderRadius: 0 }}>
-            <Text ff="Space Grotesk" size="xs" c="#D97706" fw={500}>
-              HDFC A/c: Reconciliation pending for 3 transactions
-            </Text>
-          </Box>
-        </Box>
-      );
-    case 'w11-cash-runway':
-      return (
-        <Box>
-          <PanelSection title="Runway Calculation" />
-          <PanelRow label="Total Cash (numerator)" value="₹12,45,000" />
-          <PanelRow label="Avg Daily Outflow (30d)" value="₹29,643" />
-          <PanelRow label="Days Runway" value="~42 days" highlight />
-          <PanelSection title="30-Day Window" />
-          <PanelRow label="Start" value="20 May 2024" />
-          <PanelRow label="End" value="19 Jun 2024" />
-          <PanelRow label="Total Outflow" value="₹8,89,286" />
-        </Box>
-      );
-    case 'w12-cash-flow':
-      return (
-        <Box>
-          <PanelSection title="Period Summary" />
-          <PanelRow label="Total Inflow (This Month)" value="₹47,00,000" />
-          <PanelRow label="Total Outflow (This Month)" value="₹38,50,000" />
-          <PanelRow label="Net Cash Flow" value="+₹8,50,000" highlight />
-          <PanelRow label="Prior Month Net" value="+₹5,20,000" />
-        </Box>
-      );
-    case 'w13-upcoming-cash':
-      return (
-        <Box>
-          <PanelSection title="Overdue Bills (12 total)" />
-          <PanelRow label="Vendor X — Bill #1042" value="₹1,40,000" highlight />
-          <PanelRow label="Supplier Y — Bill #892" value="₹90,000" />
-          <PanelRow label="Agency Z — Bill #331" value="₹72,000" />
-          <PanelRow label="9 more bills" value="₹43,000" />
-        </Box>
-      );
-    case 'w14-ar-out':
-      return (
-        <Box>
-          <PanelSection title="AR Summary" />
-          <PanelRow label="Total AR Outstanding" value="₹18,50,000" />
-          <PanelRow label="Overdue Amount" value="₹4,20,000" highlight />
-          <PanelRow label="Overdue Invoice Count" value="8 invoices" />
-          <PanelRow label="Advance Received (unlinked)" value="₹80,000" />
-        </Box>
-      );
-    case 'w15-dso-full':
-      return (
-        <Box>
-          <PanelSection title="DSO Summary" />
-          <PanelRow label="Current DSO" value="45 days" highlight />
-          <PanelRow label="Prior Period DSO" value="40 days" />
-          <PanelRow label="Target" value="30 days" />
-          <PanelSection title="Top Contributors" />
-          <PanelRow label="Acme Corp" value="14 days · 31%" highlight />
-          <PanelRow label="Globex Inc" value="12 days · 27%" />
-          <PanelRow label="Soylent Corp" value="10 days · 22%" />
-        </Box>
-      );
-    case 'w16-ar-aging':
-      return (
-        <Box>
-          <PanelSection title="AR Aging Buckets" />
-          <PanelRow label="Current" value="₹14,30,000 · 77%" />
-          <PanelRow label="1–30 days" value="₹2,10,000 · 11%" />
-          <PanelRow label="31–60 days" value="₹1,50,000 · 8%" />
-          <PanelRow label="61–90 days" value="₹40,000 · 2%" />
-          <PanelRow label="90+ days" value="₹20,000 · 1%" highlight />
-          <PanelSection title="Top Overdue Customers" />
-          <PanelRow label="Globex Inc" value="₹90,000" />
-          <PanelRow label="Acme Corp" value="₹60,000" />
-        </Box>
-      );
-    case 'w17-top-ar':
-      return (
-        <Box>
-          <PanelSection title="Ranked by Overdue AR" />
-          <PanelRow label="Acme Corp" value="₹2,10,000 · 50%" highlight />
-          <PanelRow label="Soylent Corp" value="₹1,20,000 · 29%" />
-          <PanelRow label="Globex Inc" value="₹90,000 · 21%" />
-        </Box>
-      );
-    case 'w18-ap-out':
-      return (
-        <Box>
-          <PanelSection title="AP Summary" />
-          <PanelRow label="Total AP Outstanding" value="₹9,45,000" />
-          <PanelRow label="Overdue Amount" value="₹3,45,000" highlight />
-          <PanelRow label="Overdue Bill Count" value="12 bills" />
-          <PanelRow label="Vendor Advances Paid (unlinked)" value="₹50,000" />
-        </Box>
-      );
-    case 'w19-dpo-full':
-      return (
-        <Box>
-          <PanelSection title="DPO Summary" />
-          <PanelRow label="Current DPO" value="38 days" highlight />
-          <PanelRow label="Prior Period DPO" value="40 days" />
-          <PanelRow label="Target Range" value="30 – 45 days" />
-          <PanelSection title="Top Contributors" />
-          <PanelRow label="Vendor X" value="₹2,10,000 outstanding" highlight />
-          <PanelRow label="Supplier Y" value="₹1,40,000 outstanding" />
-          <PanelRow label="Agency Z" value="₹80,000 outstanding" />
-        </Box>
-      );
-    case 'w20-ap-aging':
-      return (
-        <Box>
-          <PanelSection title="AP Aging Buckets" />
-          <PanelRow label="Current" value="₹6,00,000 · 63%" />
-          <PanelRow label="1–30 days" value="₹2,00,000 · 21%" />
-          <PanelRow label="31–60 days" value="₹1,00,000 · 11%" />
-          <PanelRow label="61–90 days" value="₹30,000 · 3%" />
-          <PanelRow label="90+ days" value="₹15,000 · 2%" highlight />
-          <PanelSection title="Top Overdue Vendors" />
-          <PanelRow label="Vendor X" value="₹70,000" />
-          <PanelRow label="Supplier Y" value="₹30,000" />
-        </Box>
-      );
-    case 'w21-vendor-spend':
-      return (
-        <Box>
-          <PanelSection title="Vendor Spend (This Period)" />
-          <PanelRow label="Vendor X" value="₹4,00,000 · 42%" highlight />
-          <PanelRow label="Supplier Y" value="₹2,50,000 · 26%" />
-          <PanelRow label="Agency Z" value="₹1,50,000 · 16%" />
-          <PanelRow label="Others" value="₹1,50,000 · 16%" />
-          <PanelRow label="Total" value="₹9,50,000" />
-        </Box>
-      );
-    case 'w22-upcoming-ap':
-      return (
-        <Box>
-          <PanelSection title="Overdue Bills (12 total)" />
-          <PanelRow label="Vendor X — Bill #1042" value="₹1,40,000" highlight />
-          <PanelRow label="Supplier Y — Bill #892" value="₹90,000" />
-          <PanelRow label="Agency Z — Bill #331" value="₹72,000" />
-          <PanelRow label="9 more bills" value="₹43,000" />
-        </Box>
-      );
-    default:
-      return <Text ff="Space Grotesk" size="sm" c="dimmed">No data available.</Text>;
+const Hairline = () => (
+  <Box style={{ height: 1, backgroundColor: 'var(--color-border)', margin: '8px 0' }} />
+);
+
+const StatusBadge = ({ label, variant }: { label: string; variant: 'overdue' | 'due' | 'positive' | 'warning' }) => {
+  const styles: Record<string, { bg: string; text: string; border: string }> = {
+    overdue:  { bg: '#FEF2F2', text: '#DC2626', border: '#FECACA' },
+    due:      { bg: '#F9FAFB', text: '#374151', border: '#E5E7EB' },
+    positive: { bg: '#F0FDF4', text: '#16A34A', border: '#BBF7D0' },
+    warning:  { bg: '#FFFBEB', text: '#D97706', border: '#FDE68A' },
+  };
+  const s = styles[variant];
+  return (
+    <Box style={{ display: 'inline-flex', padding: '2px 6px', borderRadius: 4, backgroundColor: s.bg, border: `1px solid ${s.border}` }}>
+      <Text ff="Space Grotesk" size="11px" fw={500} c={s.text}>{label}</Text>
+    </Box>
+  );
+};
+
+const TH = ({ label, align = 'left' }: { label: string; align?: 'left' | 'right' }) => (
+  <th style={{ textAlign: align, paddingBottom: 8, fontWeight: 'normal' }}>
+    <Text ff="Space Grotesk" size="10px" fw={600} c="var(--color-text-ghost)" style={{ textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+      {label}
+    </Text>
+  </th>
+);
+
+const TD = ({ children, align = 'left', bold }: { children: React.ReactNode; align?: 'left' | 'right'; bold?: boolean }) => (
+  <td style={{ padding: '9px 0', textAlign: align, verticalAlign: 'middle' }}>
+    {bold
+      ? <Text ff="Albert Sans" fw={600} size="13px" c="var(--color-text-primary)" className="num">{children}</Text>
+      : <Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{children}</Text>
+    }
+  </td>
+);
+
+const TR = ({ children }: { children: React.ReactNode }) => (
+  <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>{children}</tr>
+);
+
+// ─── Collapsible P&L sub-item ────────────────────────────────────────────────
+
+const PLSubRow = ({ label, amount }: { label: string; amount: number }) => (
+  <Group justify="space-between" style={{ paddingLeft: 16, paddingTop: 4 }}>
+    <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">└─ {label}</Text>
+    <Text ff="Albert Sans" size="12px" c="var(--color-text-muted)" className="num">{formatCurrency(amount)}</Text>
+  </Group>
+);
+
+// ─── Panel content per widget ────────────────────────────────────────────────
+
+const PanelReport = ({ widgetId }: { widgetId: string }) => {
+  const [selectedCustomer, setSelectedCustomer] = useState('Acme Corp');
+  const [selectedVendor, setSelectedVendor] = useState('Vendor X');
+
+  // DSO / DPO shared
+  const isDSO = ['w4-dso', 'w15-dso', 'w15-dso-full'].includes(widgetId);
+  const isDPO = ['w5-dpo', 'w19-dpo', 'w19-dpo-full'].includes(widgetId);
+  const isUpcoming = ['w6-upcoming', 'w13-upcoming-cash', 'w22-upcoming-ap'].includes(widgetId);
+  const isCash = ['w1-cash', 'w10-cash-full'].includes(widgetId);
+
+  if (isCash) {
+    return (
+      <Box>
+        <PanelSection>
+          <SectionLabel label="ACCOUNT BALANCES" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <TH label="ACCOUNT" />
+                <TH label="TYPE" />
+                <TH label="BALANCE" align="right" />
+                <TH label="CHANGE" align="right" />
+              </tr>
+            </thead>
+            <tbody>
+              <TR>
+                <TD>HDFC Current A/c</TD>
+                <TD><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">Current</Text></TD>
+                <TD align="right" bold>₹8.2L</TD>
+                <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                  <Text ff="Space Grotesk" size="12px" c="var(--color-positive)">↑ ₹45,000</Text>
+                </td>
+              </TR>
+              <tr>
+                <TD>SBI Savings A/c</TD>
+                <TD><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">Savings</Text></TD>
+                <TD align="right" bold>₹4.25L</TD>
+                <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                  <Text ff="Space Grotesk" size="12px" c="var(--color-critical)">↓ ₹12,000</Text>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <Hairline />
+          <Group justify="space-between">
+            <Text ff="Space Grotesk" fw={700} size="14px" c="var(--color-text-primary)">Total Balance</Text>
+            <Group gap={8}>
+              <Text ff="Albert Sans" fw={700} size="15px" c="var(--color-text-primary)" className="num">{formatCurrency(1245000)}</Text>
+              <Text ff="Space Grotesk" size="12px" c="var(--color-positive)" fw={600}>↑ 8.5%</Text>
+            </Group>
+          </Group>
+        </PanelSection>
+        <PanelSection last>
+          <SectionLabel label="RECENT MOVEMENTS" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <TH label="DATE" />
+                <TH label="DESCRIPTION" />
+                <TH label="AMOUNT" align="right" />
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { date: '14 Nov', desc: 'NEFT from Acme Corp',    amt: 250000, credit: true  },
+                { date: '13 Nov', desc: 'Vendor X Payment',       amt: 140000, credit: false },
+                { date: '12 Nov', desc: 'NEFT from Globex',       amt: 85000,  credit: true  },
+                { date: '11 Nov', desc: 'Salary disbursement',    amt: 420000, credit: false },
+                { date: '10 Nov', desc: 'NEFT from Soylent',      amt: 120000, credit: true  },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}>
+                    <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.date}</Text>
+                  </td>
+                  <td style={{ padding: '9px 0' }}>
+                    <Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.desc}</Text>
+                  </td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Albert Sans" fw={600} size="13px" className="num"
+                      c={row.credit ? 'var(--color-positive)' : 'var(--color-critical)'}>
+                      {row.credit ? '+' : '−'}{formatCurrency(row.amt)}
+                    </Text>
+                  </td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+        </PanelSection>
+      </Box>
+    );
   }
-}
 
-// ─── Detail content per widget ────────────────────────────────────────────────
-
-function DetailContent({ widgetId }: { widgetId: string }) {
-  switch (widgetId) {
-    case 'w7-pnl-full':
-      return (
-        <Box>
-          <PanelSection title="Revenue Breakdown" />
-          <PanelRow label="Sales — Domestic" value="₹38,00,000" />
-          <PanelRow label="Sales — Export" value="₹7,00,000" />
-          <PanelSection title="Expense Breakdown" />
-          <PanelRow label="Raw Material" value="₹18,00,000" />
-          <PanelRow label="Direct Labour" value="₹8,50,000" />
-          <PanelRow label="Selling Expenses" value="₹3,20,000" highlight />
-          <PanelRow label="Admin Expenses" value="₹3,30,000" />
-        </Box>
-      );
-    case 'w8-rev-full':
-      return (
-        <Box>
-          <PanelSection title="Top Customers · Jun" />
-          <PanelRow label="Acme Corp" value="₹12,00,000" highlight />
-          <PanelRow label="Globex Inc" value="₹8,50,000" />
-          <PanelRow label="Soylent Corp" value="₹4,20,000" />
-          <PanelSection title="Largest Invoice" />
-          <PanelRow label="INV-2024-0892 · Acme" value="₹4,20,000" />
-          <PanelSection title="Revenue Mix" />
-          <PanelRow label="Product Sales" value="72%" />
-          <PanelRow label="Service Revenue" value="28%" />
-        </Box>
-      );
-    case 'w9-top-customers':
-      return (
-        <Box>
-          <PanelSection title="Acme Corp — Open Invoices" />
-          <PanelRow label="INV-0892 · Due 15 Jul" value="₹4,20,000" highlight />
-          <PanelRow label="INV-0798 · Due 30 Jul" value="₹4,00,000" />
-          <PanelSection title="Collections Summary" />
-          <PanelRow label="Total collected (YTD)" value="₹24,00,000" />
-          <PanelRow label="Avg payment time" value="42 days" />
-          <PanelRow label="Last payment" value="₹3,80,000 · 10 Jun" />
-        </Box>
-      );
-    case 'w10-cash-full':
-      return (
-        <Box>
-          <PanelSection title="HDFC — Recent Movements" />
-          <PanelRow label="Inflow · 18 Jun" value="+₹4,20,000" highlight />
-          <PanelRow label="Outflow · 17 Jun" value="−₹2,10,000" />
-          <PanelRow label="Inflow · 15 Jun" value="+₹1,80,000" />
-          <PanelRow label="Outflow · 12 Jun" value="−₹98,000" />
-          <PanelSection title="Reconciliation" />
-          <PanelRow label="Matched transactions" value="42 of 45" />
-          <PanelRow label="Unmatched" value="3 · Needs review" highlight />
-        </Box>
-      );
-    case 'w11-cash-runway':
-      return (
-        <Box>
-          <PanelSection title="Daily Outflow Breakdown (30d)" />
-          <PanelRow label="Week 1 avg" value="₹32,000/day" />
-          <PanelRow label="Week 2 avg" value="₹28,000/day" />
-          <PanelRow label="Week 3 avg" value="₹31,000/day" />
-          <PanelRow label="Week 4 avg" value="₹27,000/day" />
-          <PanelRow label="30-day average" value="₹29,643/day" highlight />
-        </Box>
-      );
-    case 'w12-cash-flow':
-      return (
-        <Box>
-          <PanelSection title="Inflow Sources (This Month)" />
-          <PanelRow label="Customer Collections" value="₹38,00,000" highlight />
-          <PanelRow label="Advance Receipts" value="₹9,00,000" />
-          <PanelSection title="Outflow Categories" />
-          <PanelRow label="Vendor Payments" value="₹24,00,000" />
-          <PanelRow label="Salaries" value="₹8,50,000" />
-          <PanelRow label="Overheads" value="₹6,00,000" />
-        </Box>
-      );
-    case 'w13-upcoming-cash':
-      return (
-        <Box>
-          <PanelSection title="Overdue — Bill Detail" />
-          <PanelRow label="Vendor X · #1042" value="₹1,40,000 · 14d" highlight />
-          <PanelRow label="Supplier Y · #892" value="₹90,000 · 11d" />
-          <PanelRow label="Agency Z · #331" value="₹72,000 · 9d" />
-          <PanelRow label="Petty Cash · #112" value="₹43,000 · 6d" />
-        </Box>
-      );
-    case 'w14-ar-out':
-      return (
-        <Box>
-          <PanelSection title="Overdue Invoice List" />
-          <PanelRow label="Acme · INV-892 · 14d overdue" value="₹2,10,000" highlight />
-          <PanelRow label="Soylent · INV-741 · 22d overdue" value="₹1,20,000" />
-          <PanelRow label="Globex · INV-668 · 31d overdue" value="₹90,000" />
-        </Box>
-      );
-    case 'w15-dso-full':
-      return (
-        <Box>
-          <PanelSection title="Customer-Level DSO" />
-          <PanelRow label="Acme Corp · ₹12,00,000" value="52 days" highlight />
-          <PanelRow label="Globex Inc · ₹8,50,000" value="44 days" />
-          <PanelRow label="Soylent Corp · ₹4,20,000" value="38 days" />
-          <PanelRow label="Initech · ₹1,80,000" value="30 days" />
-        </Box>
-      );
-    case 'w16-ar-aging':
-      return (
-        <Box>
-          <PanelSection title="Customers · 31–60 Days Overdue" />
-          <PanelRow label="Globex Inc · INV-668" value="₹90,000" highlight />
-          <PanelRow label="Acme Corp · INV-712" value="₹60,000" />
-          <PanelSection title="Follow-up History" />
-          <PanelRow label="Email sent" value="15 Jun" />
-          <PanelRow label="Call logged" value="18 Jun" />
-          <PanelRow label="Reminder pending" value="25 Jun" />
-        </Box>
-      );
-    case 'w17-top-ar':
-      return (
-        <Box>
-          <PanelSection title="Acme Corp — Overdue Invoices" />
-          <PanelRow label="INV-892 · Due 5 Jun" value="₹1,20,000 · 14d" highlight />
-          <PanelRow label="INV-841 · Due 10 Jun" value="₹90,000 · 9d" />
-          <PanelSection title="Payment History" />
-          <PanelRow label="Last paid" value="₹3,80,000 · 10 Jun" />
-          <PanelRow label="Avg payment time" value="42 days" />
-        </Box>
-      );
-    case 'w18-ap-out':
-      return (
-        <Box>
-          <PanelSection title="Overdue Bill List" />
-          <PanelRow label="Vendor X · #1042 · 14d" value="₹1,40,000" highlight />
-          <PanelRow label="Supplier Y · #892 · 11d" value="₹90,000" />
-          <PanelRow label="Agency Z · #331 · 9d" value="₹72,000" />
-          <PanelRow label="9 more bills" value="₹43,000" />
-        </Box>
-      );
-    case 'w19-dpo-full':
-      return (
-        <Box>
-          <PanelSection title="Vendor-Level AP" />
-          <PanelRow label="Vendor X · 3 bills" value="₹2,10,000 · 45d avg" highlight />
-          <PanelRow label="Supplier Y · 2 bills" value="₹1,40,000 · 38d avg" />
-          <PanelRow label="Agency Z · 1 bill" value="₹80,000 · 32d avg" />
-        </Box>
-      );
-    case 'w20-ap-aging':
-      return (
-        <Box>
-          <PanelSection title="Vendors · 31–60 Days Overdue" />
-          <PanelRow label="Vendor X · #1021" value="₹70,000" highlight />
-          <PanelRow label="Supplier Y · #890" value="₹30,000" />
-          <PanelSection title="Payment Status" />
-          <PanelRow label="Vendor X #1021" value="Pending" />
-          <PanelRow label="Supplier Y #890" value="Partially paid" />
-        </Box>
-      );
-    case 'w21-vendor-spend':
-      return (
-        <Box>
-          <PanelSection title="Vendor X — Bill Detail" />
-          <PanelRow label="Inv #1042 · Raw Material" value="₹1,80,000" highlight />
-          <PanelRow label="Inv #1021 · Consumables" value="₹1,40,000" />
-          <PanelRow label="Inv #988 · Transport" value="₹80,000" />
-          <PanelSection title="Spend Mix" />
-          <PanelRow label="Raw Material" value="45%" />
-          <PanelRow label="Consumables" value="35%" />
-          <PanelRow label="Transport" value="20%" />
-        </Box>
-      );
-    case 'w22-upcoming-ap':
-      return (
-        <Box>
-          <PanelSection title="Overdue — Bill Detail" />
-          <PanelRow label="Vendor X · #1042 · Due 5 Jun" value="₹1,40,000" highlight />
-          <PanelRow label="Supplier Y · #892 · Due 8 Jun" value="₹90,000" />
-          <PanelRow label="Agency Z · #331 · Due 10 Jun" value="₹72,000" />
-          <PanelRow label="9 more bills" value="₹43,000" />
-        </Box>
-      );
-    default:
-      return <Text ff="Space Grotesk" size="sm" c="dimmed">No detail available.</Text>;
+  if (widgetId === 'w2-pnl-compressed') {
+    return (
+      <Box>
+        <PanelSection>
+          <SectionLabel label="THIS PERIOD" />
+          <Group justify="space-between" mb={6}>
+            <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Revenue</Text>
+            <Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">₹45L</Text>
+          </Group>
+          <Group justify="space-between" mb={4}>
+            <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">COGS</Text>
+            <Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">₹26.5L</Text>
+          </Group>
+          <Hairline />
+          <Group justify="space-between" mb={6}>
+            <Group gap={6}>
+              <Text ff="Space Grotesk" fw={600} size="13px" c="var(--color-text-primary)">Gross Profit</Text>
+              <Box style={{ backgroundColor: '#EFF6FF', padding: '1px 6px', borderRadius: 4 }}>
+                <Text ff="Space Grotesk" fw={500} size="11px" c="#2563EB">41%</Text>
+              </Box>
+            </Group>
+            <Text ff="Albert Sans" fw={600} size="13px" c="var(--color-text-primary)" className="num">₹18.5L</Text>
+          </Group>
+          <Group justify="space-between" mb={4}>
+            <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Operating Expense</Text>
+            <Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">₹6.5L</Text>
+          </Group>
+          <Hairline />
+          <Group justify="space-between">
+            <Text ff="Space Grotesk" fw={700} size="14px" c="var(--color-text-primary)">Operating Profit</Text>
+            <Text ff="Albert Sans" fw={700} size="14px" c="var(--color-text-primary)" className="num">₹12L</Text>
+          </Group>
+        </PanelSection>
+        <PanelSection last>
+          <SectionLabel label="VS LAST MONTH" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <TH label="" />
+                <TH label="THIS MONTH" align="right" />
+                <TH label="LAST MONTH" align="right" />
+                <TH label="CHANGE" align="right" />
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { label: 'Revenue',          thisMonth: '₹45L',   lastMonth: '₹42L',   change: '+7.1%',  up: true },
+                { label: 'Gross Profit',     thisMonth: '₹18.5L', lastMonth: '₹17.2L', change: '+7.6%',  up: true },
+                { label: 'Operating Expense',thisMonth: '₹6.5L',  lastMonth: '₹6.3L',  change: '+3.2%',  up: false },
+                { label: 'Operating Profit', thisMonth: '₹12L',   lastMonth: '₹10.9L', change: '+10.1%', up: true },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}>
+                    <Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.label}</Text>
+                  </td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">{row.thisMonth}</Text>
+                  </td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Albert Sans" size="13px" c="var(--color-text-muted)" className="num">{row.lastMonth}</Text>
+                  </td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Space Grotesk" size="12px" fw={500} c={row.up ? 'var(--color-positive)' : 'var(--color-critical)'}>
+                      {row.up ? '↑' : '↓'} {row.change.replace(/^[+\-]/, '')}
+                    </Text>
+                  </td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+        </PanelSection>
+      </Box>
+    );
   }
-}
 
-// ─── Side Panel ───────────────────────────────────────────────────────────────
+  if (widgetId === 'w3-rev-spark' || widgetId === 'w8-rev-full') {
+    return (
+      <Box>
+        <PanelSection>
+          <SectionLabel label="CURRENT PERIOD" />
+          <Group gap={8} align="baseline">
+            <Text ff="Albert Sans" fw={700} size="24px" c="var(--color-text-primary)" className="num">₹45L</Text>
+            <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">this month</Text>
+          </Group>
+          <Box mt={6}>
+            <Box style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: 10, backgroundColor: '#F0FDF4' }}>
+              <Text ff="Space Grotesk" size="12px" fw={600} c="var(--color-positive)">↑ 7.1% vs last month</Text>
+            </Box>
+          </Box>
+        </PanelSection>
+        <PanelSection>
+          <SectionLabel label="MONTHLY BREAKDOWN" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <TH label="MONTH" />
+                <TH label="REVENUE" align="right" />
+                <TH label="MOM CHANGE" align="right" />
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { month: 'Jan 2024', rev: '₹30L',   change: '—',      up: null },
+                { month: 'Feb 2024', rev: '₹31.5L', change: '5.0%',   up: true },
+                { month: 'Mar 2024', rev: '₹32L',   change: '1.6%',   up: true },
+                { month: 'Apr 2024', rev: '₹34L',   change: '6.3%',   up: true },
+                { month: 'May 2024', rev: '₹38L',   change: '11.8%',  up: true },
+                { month: 'Jun 2024', rev: '₹45L',   change: '18.4%',  up: true },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}>
+                    <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">{row.month}</Text>
+                  </td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Albert Sans" fw={600} size="13px" c="var(--color-text-primary)" className="num">{row.rev}</Text>
+                  </td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Space Grotesk" size="12px"
+                      c={row.up === null ? 'var(--color-text-ghost)' : row.up ? 'var(--color-positive)' : 'var(--color-critical)'}>
+                      {row.up !== null ? (row.up ? '↑ ' : '↓ ') : ''}{row.change}
+                    </Text>
+                  </td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+        </PanelSection>
+        <PanelSection last>
+          <SectionLabel label="TOP CUSTOMERS THIS MONTH" />
+          {[
+            { name: 'Acme Corp',    amt: '₹12L',  share: '26.7%' },
+            { name: 'Globex Inc',   amt: '₹8.5L', share: '18.9%' },
+            { name: 'Soylent Corp', amt: '₹4.2L', share: '9.3%'  },
+          ].map((c, i) => (
+            <Group key={i} justify="space-between" py={6} style={{ borderBottom: i < 2 ? '1px solid rgba(0,0,0,0.04)' : 'none' }}>
+              <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">{c.name}</Text>
+              <Group gap={8}>
+                <Text ff="Albert Sans" fw={600} size="13px" c="var(--color-text-primary)" className="num">{c.amt}</Text>
+                <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{c.share}</Text>
+              </Group>
+            </Group>
+          ))}
+        </PanelSection>
+      </Box>
+    );
+  }
+
+  if (isDSO) {
+    return (
+      <Box>
+        <PanelSection>
+          <SectionLabel label="METRIC" />
+          <Group gap={8} align="baseline" mb={8}>
+            <Text ff="Albert Sans" fw={700} size="28px" c="var(--color-text-primary)" className="num">45 days</Text>
+          </Group>
+          <Box mb={6}>
+            <Box style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: 10, backgroundColor: '#FEF2F2' }}>
+              <Text ff="Space Grotesk" size="12px" fw={500} c="var(--color-critical)">↑ 12% vs last month</Text>
+            </Box>
+          </Box>
+          <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)" mb={8}>Target: 40 days</Text>
+          <StatusBadge label="15 days above target" variant="overdue" />
+        </PanelSection>
+        <PanelSection>
+          <SectionLabel label="CUSTOMER CONTRIBUTION" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <TH label="CUSTOMER" />
+                <TH label="CONTRIB" align="right" />
+                <TH label="AVG DAYS" align="right" />
+                <TH label="OUTSTANDING" align="right" />
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { name: 'Acme Corp',    contrib: '14d', pct: '31%', avg: '67d', amt: 210000 },
+                { name: 'Soylent Corp', contrib: '8d',  pct: '18%', avg: '43d', amt: 120000 },
+                { name: 'Globex Inc',   contrib: '6d',  pct: '13%', avg: '38d', amt: 90000  },
+                { name: 'Others',       contrib: '17d', pct: '38%', avg: '—',   amt: 430000 },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}>
+                    <Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.name}</Text>
+                  </td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.contrib} · {row.pct}</Text>
+                  </td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.avg}</Text>
+                  </td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Albert Sans" fw={600} size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(row.amt)}</Text>
+                  </td>
+                </TR>
+              ))}
+              <tr style={{ borderTop: '1px solid var(--color-border)' }}>
+                <td style={{ padding: '9px 0' }}>
+                  <Text ff="Space Grotesk" fw={600} size="13px" c="var(--color-text-primary)">Total</Text>
+                </td>
+                <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                  <Text ff="Space Grotesk" fw={600} size="12px" c="var(--color-text-primary)">45d · 100%</Text>
+                </td>
+                <td />
+                <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                  <Text ff="Albert Sans" fw={700} size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(860000)}</Text>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </PanelSection>
+        <PanelSection last>
+          <SectionLabel label="TREND — LAST 3 MONTHS" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="MONTH" /><TH label="DSO" align="right" /><TH label="CHANGE" align="right" /></tr>
+            </thead>
+            <tbody>
+              {[
+                { month: 'Apr', dso: '38 days', change: '—',    up: null },
+                { month: 'May', dso: '41 days', change: '7.9%', up: true },
+                { month: 'Jun', dso: '45 days', change: '9.8%', up: true },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">{row.month}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">{row.dso}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Space Grotesk" size="12px" c={row.up === null ? 'var(--color-text-ghost)' : 'var(--color-critical)'}>{row.up ? '↑ ' : ''}{row.change}</Text>
+                  </td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+          <Text ff="Space Grotesk" size="11px" c="var(--color-warning)" mt={10} style={{ fontStyle: 'italic' }}>
+            DSO has risen 3 consecutive months.
+          </Text>
+        </PanelSection>
+      </Box>
+    );
+  }
+
+  if (isDPO) {
+    return (
+      <Box>
+        <PanelSection>
+          <SectionLabel label="METRIC" />
+          <Group gap={8} align="baseline" mb={8}>
+            <Text ff="Albert Sans" fw={700} size="28px" c="var(--color-text-primary)" className="num">38 days</Text>
+          </Group>
+          <Box mb={6}>
+            <Box style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: 10, backgroundColor: '#F9FAFB' }}>
+              <Text ff="Space Grotesk" size="12px" fw={500} c="var(--color-text-muted)">↓ 5% vs last month</Text>
+            </Box>
+          </Box>
+          <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)" mb={8}>Target range: 30–45 days</Text>
+          <StatusBadge label="Within target range" variant="positive" />
+        </PanelSection>
+        <PanelSection>
+          <SectionLabel label="VENDOR CONTRIBUTION" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <TH label="VENDOR" />
+                <TH label="CONTRIB" align="right" />
+                <TH label="AVG DAYS" align="right" />
+                <TH label="OUTSTANDING" align="right" />
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { name: 'Vendor X',   contrib: '12d', pct: '32%', avg: '45d', amt: 210000 },
+                { name: 'Supplier Y', contrib: '8d',  pct: '21%', avg: '38d', amt: 140000 },
+                { name: 'Agency Z',   contrib: '5d',  pct: '13%', avg: '32d', amt: 80000  },
+                { name: 'Others',     contrib: '13d', pct: '34%', avg: '—',   amt: 295000 },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.name}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.contrib} · {row.pct}</Text>
+                  </td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.avg}</Text>
+                  </td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Albert Sans" fw={600} size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(row.amt)}</Text>
+                  </td>
+                </TR>
+              ))}
+              <tr style={{ borderTop: '1px solid var(--color-border)' }}>
+                <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" fw={600} size="13px" c="var(--color-text-primary)">Total</Text></td>
+                <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" fw={600} size="12px" c="var(--color-text-primary)">38d · 100%</Text></td>
+                <td />
+                <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                  <Text ff="Albert Sans" fw={700} size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(725000)}</Text>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </PanelSection>
+        <PanelSection last>
+          <SectionLabel label="TREND — LAST 3 MONTHS" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="MONTH" /><TH label="DPO" align="right" /><TH label="CHANGE" align="right" /></tr>
+            </thead>
+            <tbody>
+              {[
+                { month: 'Apr', dpo: '42 days', change: '—',    down: null },
+                { month: 'May', dpo: '40 days', change: '4.8%', down: true },
+                { month: 'Jun', dpo: '38 days', change: '5.0%', down: true },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">{row.month}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">{row.dpo}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Space Grotesk" size="12px" c={row.down === null ? 'var(--color-text-ghost)' : 'var(--color-text-muted)'}>{row.down ? '↓ ' : ''}{row.change}</Text>
+                  </td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+          <Text ff="Space Grotesk" size="11px" c="var(--color-warning)" mt={10} style={{ fontStyle: 'italic' }}>
+            DPO is declining but remains within target floor (30 days).
+          </Text>
+        </PanelSection>
+      </Box>
+    );
+  }
+
+  if (isUpcoming) {
+    return (
+      <Box>
+        <PanelSection>
+          <Text ff="Space Grotesk" size="10px" fw={600} c="var(--color-critical)" mb={6} style={{ letterSpacing: '0.8px', textTransform: 'uppercase' }}>OVERDUE</Text>
+          <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)" mb={10}>{formatCurrency(345000)} · 12 bills</Text>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="VENDOR / BILL NO" /><TH label="AMOUNT" align="right" /><TH label="OVERDUE" align="right" /></tr>
+            </thead>
+            <tbody>
+              {[
+                { vendor: 'Vendor X',   bill: '#1042', amt: 140000, age: '14d overdue' },
+                { vendor: 'Supplier Y', bill: '#892',  amt: 90000,  age: '11d overdue' },
+                { vendor: 'Agency Z',   bill: '#331',  amt: 72000,  age: '9d overdue'  },
+                { vendor: 'Petty Cash', bill: '#112',  amt: 43000,  age: '6d overdue'  },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.vendor} · {row.bill}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{formatCurrency(row.amt)}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-critical)">{row.age}</Text></td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+          <Text ff="Space Grotesk" size="11px" c="var(--color-critical)" mt={8} fw={500}>+ 8 more bills — {formatCurrency(200000)} total</Text>
+        </PanelSection>
+        <PanelSection>
+          <Text ff="Space Grotesk" size="10px" fw={600} c="var(--color-text-muted)" mb={6} style={{ letterSpacing: '0.8px', textTransform: 'uppercase' }}>DUE IN 0–7 DAYS</Text>
+          <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)" mb={10}>{formatCurrency(180000)} · 5 bills</Text>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="VENDOR / BILL NO" /><TH label="AMOUNT" align="right" /><TH label="DUE DATE" align="right" /></tr>
+            </thead>
+            <tbody>
+              {[
+                { vendor: 'Vendor A', bill: '#205', amt: 60000, due: 'Due 2 Nov' },
+                { vendor: 'Vendor B', bill: '#301', amt: 75000, due: 'Due 4 Nov' },
+                { vendor: 'Vendor C', bill: '#144', amt: 45000, due: 'Due 6 Nov' },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.vendor} · {row.bill}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{formatCurrency(row.amt)}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-ghost)">{row.due}</Text></td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+          <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)" mt={8}>+ 2 more bills</Text>
+        </PanelSection>
+        <PanelSection last>
+          <Text ff="Space Grotesk" size="10px" fw={600} c="var(--color-text-muted)" mb={6} style={{ letterSpacing: '0.8px', textTransform: 'uppercase' }}>DUE IN 8–15 DAYS</Text>
+          <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)" mb={10}>{formatCurrency(420000)} · 8 bills</Text>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="VENDOR / BILL NO" /><TH label="AMOUNT" align="right" /><TH label="DUE DATE" align="right" /></tr>
+            </thead>
+            <tbody>
+              {[
+                { vendor: 'Vendor D', bill: '#408', amt: 120000, due: 'Due 9 Nov'  },
+                { vendor: 'Vendor E', bill: '#519', amt: 90000,  due: 'Due 12 Nov' },
+                { vendor: 'Vendor F', bill: '#312', amt: 60000,  due: 'Due 15 Nov' },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.vendor} · {row.bill}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{formatCurrency(row.amt)}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-ghost)">{row.due}</Text></td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+          <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)" mt={8}>+ 5 more bills</Text>
+        </PanelSection>
+      </Box>
+    );
+  }
+
+  if (widgetId === 'w7-pnl-full') {
+    return (
+      <Box>
+        <PanelSection>
+          <SectionLabel label="INCOME STATEMENT" />
+          <Group justify="space-between" mb={2}>
+            <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Revenue</Text>
+            <Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">₹45L</Text>
+          </Group>
+          <PLSubRow label="Sales Accounts" amount={3850000} />
+          <PLSubRow label="Direct Incomes" amount={650000} />
+          <Box mt={8} mb={2}>
+            <Group justify="space-between">
+              <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">COGS</Text>
+              <Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">₹26.5L</Text>
+            </Group>
+            <PLSubRow label="Purchase Accounts" amount={2200000} />
+            <PLSubRow label="Direct Expenses" amount={450000} />
+          </Box>
+          <Hairline />
+          <Group justify="space-between" mb={2}>
+            <Group gap={6}>
+              <Text ff="Space Grotesk" fw={600} size="13px" c="var(--color-text-primary)">Gross Profit</Text>
+              <Box style={{ backgroundColor: '#EFF6FF', padding: '1px 6px', borderRadius: 4 }}>
+                <Text ff="Space Grotesk" size="11px" fw={500} c="#2563EB">41% margin</Text>
+              </Box>
+            </Group>
+            <Text ff="Albert Sans" fw={600} size="13px" c="var(--color-text-primary)" className="num">₹18.5L</Text>
+          </Group>
+          <Hairline />
+          <Group justify="space-between" mt={2} mb={2}>
+            <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Operating Expense</Text>
+            <Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">₹6.5L</Text>
+          </Group>
+          <PLSubRow label="Indirect Expenses" amount={650000} />
+          <Hairline />
+          <Group justify="space-between" mt={4}>
+            <Text ff="Space Grotesk" fw={700} size="14px" c="var(--color-text-primary)">Operating Profit</Text>
+            <Text ff="Albert Sans" fw={700} size="14px" c="var(--color-text-primary)" className="num">₹12L</Text>
+          </Group>
+        </PanelSection>
+        <PanelSection last>
+          <SectionLabel label="VS LAST MONTH" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <TH label="" />
+                <TH label="THIS MONTH" align="right" />
+                <TH label="LAST MONTH" align="right" />
+                <TH label="CHANGE" align="right" />
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { label: 'Revenue',           thisMonth: '₹45L',   lastMonth: '₹42L',   change: '7.1%',  up: true },
+                { label: 'Gross Profit',      thisMonth: '₹18.5L', lastMonth: '₹17.2L', change: '7.6%',  up: true },
+                { label: 'Operating Expense', thisMonth: '₹6.5L',  lastMonth: '₹6.3L',  change: '3.2%',  up: false },
+                { label: 'Operating Profit',  thisMonth: '₹12L',   lastMonth: '₹10.9L', change: '10.1%', up: true },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.label}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">{row.thisMonth}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" size="13px" c="var(--color-text-muted)" className="num">{row.lastMonth}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Space Grotesk" size="12px" fw={500} c={row.up ? 'var(--color-positive)' : 'var(--color-critical)'}>
+                      {row.up ? '↑' : '↓'} {row.change}
+                    </Text>
+                  </td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+        </PanelSection>
+      </Box>
+    );
+  }
+
+  if (widgetId === 'w9-top-customers') {
+    const invoicesByCustomer: Record<string, { inv: string; amt: number; due: string; status: string; statusVariant: 'overdue' | 'due' }[]> = {
+      'Acme Corp': [
+        { inv: 'INV-2241', amt: 210000, due: '15 Oct 2024', status: 'Overdue 30d', statusVariant: 'overdue' },
+        { inv: 'INV-2318', amt: 320000, due: '12 Nov 2024', status: 'Due in 12d',  statusVariant: 'due'     },
+        { inv: 'INV-2401', amt: 670000, due: '30 Nov 2024', status: 'Due in 30d',  statusVariant: 'due'     },
+      ],
+      'Globex Inc': [
+        { inv: 'INV-2187', amt: 90000,  due: '28 Oct 2024', status: 'Overdue 17d', statusVariant: 'overdue' },
+        { inv: 'INV-2302', amt: 760000, due: '20 Nov 2024', status: 'Due in 20d',  statusVariant: 'due'     },
+      ],
+      'Soylent Corp': [
+        { inv: 'INV-2198', amt: 120000, due: '22 Oct 2024', status: 'Overdue 23d', statusVariant: 'overdue' },
+        { inv: 'INV-2389', amt: 300000, due: '4 Dec 2024',  status: 'Due in 34d',  statusVariant: 'due'     },
+      ],
+    };
+
+    const invoices = invoicesByCustomer[selectedCustomer] || [];
+
+    return (
+      <Box>
+        <PanelSection>
+          <SectionLabel label="RANKINGS — BY REVENUE" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <TH label="#" />
+                <TH label="CUSTOMER" />
+                <TH label="REVENUE" align="right" />
+                <TH label="SHARE" align="right" />
+                <TH label="VS LM" align="right" />
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { rank: 1, name: 'Acme Corp',    rev: '₹12L',   share: '26.7%', change: '8.2%',  up: true  },
+                { rank: 2, name: 'Globex Inc',   rev: '₹8.5L',  share: '18.9%', change: '3.1%',  up: true  },
+                { rank: 3, name: 'Soylent Corp', rev: '₹4.2L',  share: '9.3%',  change: '2.4%',  up: false },
+                { rank: 4, name: 'Initech',      rev: '₹1.8L',  share: '4.0%',  change: '0.9%',  up: true  },
+                { rank: 5, name: 'Others',       rev: '₹18.5L', share: '41.1%', change: '—',     up: null  },
+              ].map((row) => (
+                <tr
+                  key={row.rank}
+                  style={{
+                    borderBottom: '1px solid rgba(0,0,0,0.04)',
+                    cursor: row.name !== 'Others' ? 'pointer' : 'default',
+                    backgroundColor: selectedCustomer === row.name ? 'var(--color-bg-hover)' : 'transparent',
+                  }}
+                  onClick={() => row.name !== 'Others' && setSelectedCustomer(row.name)}
+                >
+                  <td style={{ padding: '9px 4px 9px 0' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-ghost)">{row.rank}</Text></td>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)" fw={selectedCustomer === row.name ? 600 : 400}>{row.name}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" c="var(--color-text-primary)" className="num">{row.rev}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.share}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Space Grotesk" size="12px" c={row.up === null ? 'var(--color-text-ghost)' : row.up ? 'var(--color-positive)' : 'var(--color-critical)'}>
+                      {row.up !== null ? (row.up ? '↑ ' : '↓ ') : ''}{row.change}
+                    </Text>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </PanelSection>
+        <PanelSection last>
+          <SectionLabel label={`OPEN INVOICES — ${selectedCustomer.toUpperCase()}`} />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="INVOICE" /><TH label="AMOUNT" align="right" /><TH label="DUE DATE" align="right" /><TH label="STATUS" align="right" /></tr>
+            </thead>
+            <tbody>
+              {invoices.map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.inv}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{formatCurrency(row.amt)}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.due}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><StatusBadge label={row.status} variant={row.statusVariant} /></td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+        </PanelSection>
+      </Box>
+    );
+  }
+
+  if (widgetId === 'w14-ar-out') {
+    return (
+      <Box>
+        <PanelSection>
+          <SectionLabel label="SUMMARY" />
+          <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+            <Box>
+              <SectionLabel label="TOTAL AR" />
+              <Text ff="Albert Sans" fw={700} size="20px" c="var(--color-text-primary)" className="num">{formatCurrency(1850000)}</Text>
+            </Box>
+            <Box>
+              <SectionLabel label="OVERDUE" />
+              <Text ff="Albert Sans" fw={700} size="20px" c="var(--color-critical)" className="num">{formatCurrency(420000)}</Text>
+              <Text ff="Space Grotesk" size="11px" c="var(--color-critical)">8 invoices</Text>
+            </Box>
+            <Box>
+              <SectionLabel label="AVG AGE" />
+              <Text ff="Albert Sans" fw={700} size="20px" c="var(--color-text-primary)" className="num">42 days</Text>
+            </Box>
+          </Box>
+        </PanelSection>
+        <PanelSection last>
+          <SectionLabel label="OPEN INVOICES" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <TH label="CUSTOMER" />
+                <TH label="INVOICE" />
+                <TH label="AMOUNT" align="right" />
+                <TH label="DUE DATE" align="right" />
+                <TH label="STATUS" align="right" />
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { name: 'Acme Corp',    inv: 'INV-2241', amt: 210000, due: '15 Oct 2024', status: 'Overdue 30d', v: 'overdue' as const },
+                { name: 'Soylent Corp', inv: 'INV-2198', amt: 120000, due: '22 Oct 2024', status: 'Overdue 23d', v: 'overdue' as const },
+                { name: 'Globex Inc',   inv: 'INV-2187', amt: 90000,  due: '28 Oct 2024', status: 'Overdue 17d', v: 'overdue' as const },
+                { name: 'Initech',      inv: 'INV-2301', amt: 180000, due: '5 Nov 2024',  status: 'Due in 5d',   v: 'due' as const     },
+                { name: 'Umbrella Co',  inv: 'INV-2318', amt: 320000, due: '12 Nov 2024', status: 'Due in 12d',  v: 'due' as const     },
+                { name: 'Acme Corp',    inv: 'INV-2402', amt: 670000, due: '30 Nov 2024', status: 'Due in 30d',  v: 'due' as const     },
+                { name: 'Soylent Corp', inv: 'INV-2389', amt: 210000, due: '4 Dec 2024',  status: 'Due in 34d',  v: 'due' as const     },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0', maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.name}</Text>
+                  </td>
+                  <td style={{ padding: '9px 0' }}>
+                    <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.inv}</Text>
+                  </td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{formatCurrency(row.amt)}</Text>
+                  </td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.due}</Text>
+                  </td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <StatusBadge label={row.status} variant={row.v} />
+                  </td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+          <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)" mt={12} style={{ fontStyle: 'italic' }}>
+            Advance payments received (not yet invoiced): ₹0
+          </Text>
+        </PanelSection>
+      </Box>
+    );
+  }
+
+  if (widgetId === 'w16-ar-aging') {
+    return (
+      <Box>
+        <PanelSection>
+          <SectionLabel label="BUCKET SUMMARY" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="BUCKET" /><TH label="INVOICES" align="right" /><TH label="AMOUNT" align="right" /><TH label="% TOTAL AR" align="right" /></tr>
+            </thead>
+            <tbody>
+              {[
+                { bucket: 'Current',    inv: 22, amt: 1430000, pct: '77.3%' },
+                { bucket: '1–30 days',  inv: 3,  amt: 210000,  pct: '11.4%' },
+                { bucket: '31–60 days', inv: 2,  amt: 120000,  pct: '6.5%'  },
+                { bucket: '61–90 days', inv: 1,  amt: 65000,   pct: '3.5%'  },
+                { bucket: '90+ days',   inv: 1,  amt: 25000,   pct: '1.4%'  },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.bucket}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-muted)">{row.inv}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{formatCurrency(row.amt)}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.pct}</Text></td>
+                </TR>
+              ))}
+              <tr style={{ borderTop: '1px solid var(--color-border)' }}>
+                <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" fw={600} size="13px" c="var(--color-text-primary)">Total</Text></td>
+                <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" fw={600} size="13px" c="var(--color-text-primary)">29</Text></td>
+                <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={700} size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(1850000)}</Text></td>
+                <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" fw={600} size="12px" c="var(--color-text-primary)">100%</Text></td>
+              </tr>
+            </tbody>
+          </table>
+        </PanelSection>
+        <PanelSection last>
+          <SectionLabel label="ALL OVERDUE INVOICES" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="CUSTOMER" /><TH label="INVOICE" /><TH label="AMOUNT" align="right" /><TH label="DAYS OVERDUE" align="right" /></tr>
+            </thead>
+            <tbody>
+              {[
+                { name: 'Acme Corp',    inv: 'INV-2241', amt: 210000, days: '30d'  },
+                { name: 'Soylent Corp', inv: 'INV-2198', amt: 120000, days: '23d'  },
+                { name: 'Globex Inc',   inv: 'INV-2187', amt: 90000,  days: '17d'  },
+                { name: 'Acme Corp',    inv: 'INV-2089', amt: 65000,  days: '68d'  },
+                { name: 'Soylent Corp', inv: 'INV-1998', amt: 25000,  days: '94d'  },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.name}</Text></td>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.inv}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{formatCurrency(row.amt)}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-critical)">{row.days}</Text></td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+        </PanelSection>
+      </Box>
+    );
+  }
+
+  if (widgetId === 'w17-top-ar') {
+    const arInvoices: Record<string, { inv: string; amt: number; due: string; days: string }[]> = {
+      'Acme Corp': [
+        { inv: 'INV-2241', amt: 210000, due: '15 Oct 2024', days: '30d overdue' },
+        { inv: 'INV-2089', amt: 65000,  due: '17 Sep 2024', days: '68d overdue' },
+      ],
+      'Soylent Corp': [
+        { inv: 'INV-2198', amt: 120000, due: '22 Oct 2024', days: '23d overdue' },
+        { inv: 'INV-1998', amt: 25000,  due: '18 Sep 2024', days: '94d overdue' },
+      ],
+      'Globex Inc': [
+        { inv: 'INV-2187', amt: 90000, due: '28 Oct 2024', days: '17d overdue' },
+      ],
+    };
+    const invoices = arInvoices[selectedCustomer] || arInvoices['Acme Corp'];
+    const displayCustomer = selectedCustomer in arInvoices ? selectedCustomer : 'Acme Corp';
+
+    return (
+      <Box>
+        <PanelSection>
+          <SectionLabel label="OVERDUE RANKINGS" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="#" /><TH label="CUSTOMER" /><TH label="OVERDUE AR" align="right" /><TH label="% TOTAL" align="right" /><TH label="OLDEST" align="right" /></tr>
+            </thead>
+            <tbody>
+              {[
+                { rank: 1, name: 'Acme Corp',    amt: 210000, pct: '50.0%', oldest: '30d (INV-2241)' },
+                { rank: 2, name: 'Soylent Corp', amt: 120000, pct: '28.6%', oldest: '23d (INV-2198)' },
+                { rank: 3, name: 'Globex Inc',   amt: 90000,  pct: '21.4%', oldest: '17d (INV-2187)' },
+              ].map((row) => (
+                <tr
+                  key={row.rank}
+                  style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', cursor: 'pointer', backgroundColor: displayCustomer === row.name ? 'var(--color-bg-hover)' : 'transparent' }}
+                  onClick={() => setSelectedCustomer(row.name)}
+                >
+                  <td style={{ padding: '9px 4px 9px 0' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-ghost)">{row.rank}</Text></td>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)" fw={displayCustomer === row.name ? 600 : 400}>{row.name}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-critical)">{formatCurrency(row.amt)}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.pct}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="11px" c="var(--color-text-muted)">{row.oldest}</Text></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)" mt={10}>
+            Total overdue: {formatCurrency(420000)} across 8 invoices
+          </Text>
+        </PanelSection>
+        <PanelSection last>
+          <SectionLabel label={`INVOICES — ${displayCustomer.toUpperCase()}`} />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="INVOICE" /><TH label="AMOUNT" align="right" /><TH label="DUE DATE" align="right" /><TH label="OVERDUE" align="right" /></tr>
+            </thead>
+            <tbody>
+              {invoices.map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.inv}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{formatCurrency(row.amt)}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.due}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-critical)">{row.days}</Text></td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+          {displayCustomer === 'Acme Corp' && (
+            <Text ff="Space Grotesk" size="11px" c="var(--color-text-muted)" mt={12}>
+              Last payment from Acme Corp: ₹5,00,000 on 3 Sep 2024
+            </Text>
+          )}
+        </PanelSection>
+      </Box>
+    );
+  }
+
+  if (widgetId === 'w18-ap-out') {
+    return (
+      <Box>
+        <PanelSection>
+          <SectionLabel label="SUMMARY" />
+          <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+            <Box>
+              <SectionLabel label="TOTAL AP" />
+              <Text ff="Albert Sans" fw={700} size="20px" c="var(--color-text-primary)" className="num">{formatCurrency(945000)}</Text>
+            </Box>
+            <Box>
+              <SectionLabel label="OVERDUE" />
+              <Text ff="Albert Sans" fw={700} size="20px" c="var(--color-critical)" className="num">{formatCurrency(345000)}</Text>
+              <Text ff="Space Grotesk" size="11px" c="var(--color-critical)">12 bills</Text>
+            </Box>
+            <Box>
+              <SectionLabel label="LARGEST VENDOR" />
+              <Text ff="Albert Sans" fw={700} size="16px" c="var(--color-text-primary)">Vendor X</Text>
+              <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)" className="num">₹4L</Text>
+            </Box>
+          </Box>
+        </PanelSection>
+        <PanelSection last>
+          <SectionLabel label="OPEN BILLS" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="VENDOR" /><TH label="BILL NO" /><TH label="AMOUNT" align="right" /><TH label="DUE DATE" align="right" /><TH label="STATUS" align="right" /></tr>
+            </thead>
+            <tbody>
+              {[
+                { vendor: 'Vendor X',   bill: 'BL-441', amt: 140000, due: '18 Oct 2024', status: 'Overdue 14d', v: 'overdue' as const },
+                { vendor: 'Supplier Y', bill: 'BL-398', amt: 90000,  due: '21 Oct 2024', status: 'Overdue 11d', v: 'overdue' as const },
+                { vendor: 'Agency Z',   bill: 'BL-412', amt: 72000,  due: '23 Oct 2024', status: 'Overdue 9d',  v: 'overdue' as const },
+                { vendor: 'Petty Cash', bill: 'BL-112', amt: 43000,  due: '26 Oct 2024', status: 'Overdue 6d',  v: 'overdue' as const },
+                { vendor: 'Vendor X',   bill: 'BL-519', amt: 260000, due: '8 Nov 2024',  status: 'Due in 8d',   v: 'due' as const     },
+                { vendor: 'Supplier Y', bill: 'BL-521', amt: 90000,  due: '14 Nov 2024', status: 'Due in 14d',  v: 'due' as const     },
+                { vendor: 'Agency Z',   bill: 'BL-498', amt: 78000,  due: '18 Nov 2024', status: 'Due in 18d',  v: 'due' as const     },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.vendor}</Text></td>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.bill}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{formatCurrency(row.amt)}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.due}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><StatusBadge label={row.status} variant={row.v} /></td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+          <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)" mt={12} style={{ fontStyle: 'italic' }}>
+            Vendor advances paid (not yet billed): ₹0
+          </Text>
+        </PanelSection>
+      </Box>
+    );
+  }
+
+  if (widgetId === 'w20-ap-aging') {
+    return (
+      <Box>
+        <PanelSection>
+          <SectionLabel label="BUCKET SUMMARY" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="BUCKET" /><TH label="BILLS" align="right" /><TH label="AMOUNT" align="right" /><TH label="% TOTAL AP" align="right" /></tr>
+            </thead>
+            <tbody>
+              {[
+                { bucket: 'Current',    bills: 18, amt: 610000, pct: '64.6%' },
+                { bucket: '1–30 days',  bills: 6,  amt: 160000, pct: '16.9%' },
+                { bucket: '31–60 days', bills: 4,  amt: 105000, pct: '11.1%' },
+                { bucket: '61–90 days', bills: 3,  amt: 52000,  pct: '5.5%'  },
+                { bucket: '90+ days',   bills: 1,  amt: 18000,  pct: '1.9%'  },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.bucket}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-muted)">{row.bills}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{formatCurrency(row.amt)}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.pct}</Text></td>
+                </TR>
+              ))}
+              <tr style={{ borderTop: '1px solid var(--color-border)' }}>
+                <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" fw={600} size="13px" c="var(--color-text-primary)">Total</Text></td>
+                <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" fw={600} size="13px" c="var(--color-text-primary)">32</Text></td>
+                <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={700} size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(945000)}</Text></td>
+                <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" fw={600} size="12px" c="var(--color-text-primary)">100%</Text></td>
+              </tr>
+            </tbody>
+          </table>
+        </PanelSection>
+        <PanelSection last>
+          <SectionLabel label="ALL OVERDUE BILLS" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="VENDOR" /><TH label="BILL NO" /><TH label="AMOUNT" align="right" /><TH label="DUE DATE" align="right" /><TH label="DAYS OVERDUE" align="right" /></tr>
+            </thead>
+            <tbody>
+              {[
+                { vendor: 'Vendor X',   bill: 'BL-441', amt: 140000, due: '18 Oct', days: '14d' },
+                { vendor: 'Supplier Y', bill: 'BL-398', amt: 90000,  due: '21 Oct', days: '11d' },
+                { vendor: 'Agency Z',   bill: 'BL-412', amt: 72000,  due: '23 Oct', days: '9d'  },
+                { vendor: 'Petty Cash', bill: 'BL-112', amt: 43000,  due: '26 Oct', days: '6d'  },
+                { vendor: 'Vendor X',   bill: 'BL-302', amt: 52000,  due: '14 Sep', days: '47d' },
+                { vendor: 'Supplier Y', bill: 'BL-287', amt: 35000,  due: '20 Sep', days: '41d' },
+                { vendor: 'Vendor X',   bill: 'BL-198', amt: 18000,  due: '15 Aug', days: '77d' },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.vendor}</Text></td>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.bill}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{formatCurrency(row.amt)}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.due}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-critical)">{row.days}</Text></td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+        </PanelSection>
+      </Box>
+    );
+  }
+
+  if (widgetId === 'w21-vendor-spend') {
+    const vendorBills: Record<string, { bill: string; amt: number; date: string; status: string; v: 'overdue' | 'due' }[]> = {
+      'Vendor X': [
+        { bill: 'BL-441', amt: 140000, date: '18 Oct 2024', status: 'Overdue 14d', v: 'overdue' },
+        { bill: 'BL-519', amt: 260000, date: '8 Nov 2024',  status: 'Due in 8d',   v: 'due'     },
+      ],
+      'Supplier Y': [
+        { bill: 'BL-398', amt: 90000,  date: '21 Oct 2024', status: 'Overdue 11d', v: 'overdue' },
+        { bill: 'BL-521', amt: 90000,  date: '14 Nov 2024', status: 'Due in 14d',  v: 'due'     },
+      ],
+      'Agency Z': [
+        { bill: 'BL-412', amt: 72000, date: '23 Oct 2024', status: 'Overdue 9d', v: 'overdue' },
+        { bill: 'BL-498', amt: 78000, date: '18 Nov 2024', status: 'Due in 18d', v: 'due'     },
+      ],
+    };
+    const bills = vendorBills[selectedVendor] || vendorBills['Vendor X'];
+    const isHighConcentration = selectedVendor === 'Vendor X';
+
+    return (
+      <Box>
+        <PanelSection>
+          <SectionLabel label="TOP VENDORS" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="#" /><TH label="VENDOR" /><TH label="BILLED" align="right" /><TH label="SHARE" align="right" /><TH label="VS LM" align="right" /></tr>
+            </thead>
+            <tbody>
+              {[
+                { rank: 1, name: 'Vendor X',   amt: 400000, share: '42.3%', change: '5.2%', up: true  },
+                { rank: 2, name: 'Supplier Y', amt: 250000, share: '26.5%', change: '1.8%', up: false },
+                { rank: 3, name: 'Agency Z',   amt: 150000, share: '15.9%', change: '0.4%', up: true  },
+                { rank: 4, name: 'Others',     amt: 145000, share: '15.3%', change: '—',    up: null  },
+              ].map((row) => (
+                <tr
+                  key={row.rank}
+                  style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', cursor: row.name !== 'Others' ? 'pointer' : 'default', backgroundColor: selectedVendor === row.name ? 'var(--color-bg-hover)' : 'transparent' }}
+                  onClick={() => row.name !== 'Others' && setSelectedVendor(row.name)}
+                >
+                  <td style={{ padding: '9px 4px 9px 0' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-ghost)">{row.rank}</Text></td>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)" fw={selectedVendor === row.name ? 600 : 400}>{row.name}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{formatCurrency(row.amt)}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.share}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Space Grotesk" size="12px" c={row.up === null ? 'var(--color-text-ghost)' : row.up ? 'var(--color-positive)' : 'var(--color-critical)'}>
+                      {row.up !== null ? (row.up ? '↑ ' : '↓ ') : ''}{row.change}
+                    </Text>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Text ff="Space Grotesk" size="11px" c={isHighConcentration ? 'var(--color-warning)' : 'var(--color-text-muted)'} mt={10}>
+            Vendor X accounts for 42.3% of total billed spend this month.
+          </Text>
+        </PanelSection>
+        <PanelSection last>
+          <SectionLabel label={`BILLS — ${selectedVendor.toUpperCase()}`} />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="BILL NO" /><TH label="AMOUNT" align="right" /><TH label="DATE" align="right" /><TH label="STATUS" align="right" /></tr>
+            </thead>
+            <tbody>
+              {bills.map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.bill}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{formatCurrency(row.amt)}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.date}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><StatusBadge label={row.status} variant={row.v} /></td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+          <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)" mt={10}>
+            Total billed this month: {formatCurrency(vendorBills[selectedVendor]?.reduce((a, r) => a + r.amt, 0) ?? 0)} across {bills.length} bills
+          </Text>
+        </PanelSection>
+      </Box>
+    );
+  }
+
+  // Fallback for w12-cash-flow (no detail panel needed, but show something meaningful)
+  return (
+    <Box py={40} style={{ textAlign: 'center' }}>
+      <Text ff="Space Grotesk" size="sm" c="var(--color-text-ghost)">
+        No additional detail available for this widget.
+      </Text>
+    </Box>
+  );
+};
+
+// ─── Main Panel Component ────────────────────────────────────────────────────
 
 export const SidePanel = () => {
-  const { isPanelOpen, closePanel, activeWidgetId, panelData, panelView, setPanelView, setActiveTab, dateRange } = useDashboard();
+  const { isPanelOpen, closePanel, activeWidgetId, dateRange } = useDashboard();
 
-  const isZoneA = activeWidgetId ? ZONE_A_WIDGETS.has(activeWidgetId) : false;
-  const title = activeWidgetId ? (WIDGET_TITLES[activeWidgetId] ?? activeWidgetId) : 'Details';
-  const cta = activeWidgetId ? (WIDGET_CTAS[activeWidgetId] ?? { label: 'View Report' }) : null;
-
-  // Escape key closes the panel
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closePanel(); };
     if (isPanelOpen) window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isPanelOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isPanelOpen, closePanel]);
 
-  const handleCTA = () => {
-    if (cta?.tab) {
-      setActiveTab(cta.tab);
-      closePanel();
-    }
-    // Non-tab CTAs are prototype stubs — no action
-  };
+  const title = activeWidgetId
+    ? (WIDGET_DISPLAY_NAMES[activeWidgetId] ?? activeWidgetId)
+    : 'Report';
 
   return (
     <Box
@@ -585,96 +1209,40 @@ export const SidePanel = () => {
         top: 56,
         right: 0,
         height: 'calc(100vh - 56px)',
-        width: 340,
-        backgroundColor: '#FCFCFC',
-        borderLeft: '1px solid rgba(18,19,26,0.1)',
+        width: 420,
+        backgroundColor: 'var(--color-bg-card)',
+        borderLeft: '1px solid var(--color-border)',
         zIndex: 150,
         display: 'flex',
         flexDirection: 'column',
         transform: isPanelOpen ? 'translateX(0)' : 'translateX(100%)',
-        transition: 'transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-        boxShadow: isPanelOpen ? '-6px 0 24px rgba(18,19,26,0.07)' : 'none',
+        transition: 'transform 0.2s ease-out',
+        boxShadow: 'var(--shadow-panel)',
       }}
     >
       {/* Header */}
-      <Box style={{ padding: '12px 16px 10px', borderBottom: '1px solid rgba(18,19,26,0.07)' }}>
-        <Group justify="space-between" align="flex-start" mb={isZoneA ? 0 : 10}>
-          <Box style={{ flex: 1, marginRight: 8 }}>
-            <Text ff="Albert Sans" fw={600} size="md" c="#12131A" style={{ lineHeight: 1.3 }}>
+      <Box style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--color-border)', backgroundColor: 'white' }}>
+        <Group justify="space-between" align="flex-start">
+          <Box style={{ flex: 1 }}>
+            <Text ff="Albert Sans" fw={600} size="16px" c="var(--color-text-primary)" style={{ lineHeight: 1.3 }}>
               {title}
             </Text>
-            <Text ff="Space Grotesk" size="11px" c="#AAACB5" mt={2} style={{ lineHeight: 1 }}>
+            <Text ff="Space Grotesk" size="12px" c="var(--color-text-ghost)" mt={2}>
               {dateRange ?? 'This Month'}
             </Text>
           </Box>
-          <UnstyledButton onClick={closePanel} style={{ display: 'flex', color: '#AAACB5', padding: 4, flexShrink: 0, marginTop: 1 }}>
-            <IconX size={16} />
+          <UnstyledButton onClick={closePanel} style={{ color: 'var(--color-text-ghost)', padding: 4 }}>
+            <IconX size={20} />
           </UnstyledButton>
         </Group>
-
-        {/* Summary / Detail toggle — Zone B only */}
-        {!isZoneA && (
-          <Group gap={2}>
-            {(['summary', 'detail'] as const).map((view) => (
-              <UnstyledButton
-                key={view}
-                onClick={() => setPanelView(view)}
-                style={{
-                  padding: '5px 14px',
-                  borderRadius: 0,
-                  backgroundColor: panelView === view ? '#EDEEF2' : 'transparent',
-                  fontFamily: 'Space Grotesk',
-                  fontSize: 12,
-                  fontWeight: panelView === view ? 600 : 400,
-                  color: panelView === view ? '#12131A' : '#AAACB5',
-                  textTransform: 'capitalize',
-                  transition: 'background-color 0.12s ease, color 0.12s ease',
-                }}
-              >
-                {view}
-              </UnstyledButton>
-            ))}
-          </Group>
-        )}
       </Box>
 
       {/* Body */}
-      <ScrollArea style={{ flex: 1 }}>
-        <Box style={{ padding: '6px 16px 16px' }}>
-          {panelData?.showDataQuality && (
-            <Box mb="md" style={{ backgroundColor: '#FEF3C7', padding: '8px 12px', borderRadius: 0 }}>
-              <Text ff="Space Grotesk" size="sm" fw={600} c="#D97706" mb={4}>Data Quality Warning</Text>
-              <Text ff="Space Grotesk" size="xs" c="#92400E">
-                Some transactions contributing to this metric have incomplete mappings and require review.
-              </Text>
-            </Box>
-          )}
-
-          {activeWidgetId && (
-            panelView === 'detail' && !isZoneA
-              ? <DetailContent widgetId={activeWidgetId} />
-              : <SummaryContent widgetId={activeWidgetId} />
-          )}
+      <ScrollArea style={{ flex: 1 }} offsetScrollbars>
+        <Box style={{ padding: '0 24px 24px' }}>
+          {activeWidgetId && <PanelReport widgetId={activeWidgetId} />}
         </Box>
       </ScrollArea>
-
-      {/* CTA footer */}
-      {cta && (
-        <Box style={{ padding: '10px 16px', borderTop: '1px solid rgba(18, 19, 26, 0.1)' }}>
-          <Button
-            fullWidth
-            variant="light"
-            color="blue"
-            onClick={handleCTA}
-            rightSection={<IconExternalLink size={14} />}
-            styles={{
-              root: { fontFamily: 'Space Grotesk', fontSize: 13 },
-            }}
-          >
-            {cta.label}
-          </Button>
-        </Box>
-      )}
     </Box>
   );
 };
