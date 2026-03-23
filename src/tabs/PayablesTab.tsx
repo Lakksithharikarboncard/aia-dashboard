@@ -156,7 +156,7 @@ export const PayablesTab = () => {
         </WidgetCard>
 
         {/* Row 3 — Equal height cards 5 | 5 | 2 */}
-        <WidgetCard id="w17-top-ar" title="Top Customers — Overdue AR" colSpan={5} style={{ alignSelf: 'stretch' }}>
+        <WidgetCard id="w17-top-ar" title="Top Customers — Overdue AR" colSpan={5} style={{ alignSelf: 'stretch', height: '100%' }}>
           <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
              {[
                { name: 'Acme Corp', amount: 210000, percent: 50 },
@@ -178,7 +178,7 @@ export const PayablesTab = () => {
           </Box>
         </WidgetCard>
 
-        <WidgetCard id="w21-vendor-spend" title="Vendor Spend Concentration" colSpan={5} style={{ alignSelf: 'stretch' }}>
+        <WidgetCard id="w21-vendor-spend" title="Vendor Spend Concentration" colSpan={5} style={{ alignSelf: 'stretch', height: '100%' }}>
           <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
              {[
                { name: 'Vendor X', amount: 400000, percent: 42 },
@@ -200,7 +200,7 @@ export const PayablesTab = () => {
           </Box>
         </WidgetCard>
 
-        <WidgetCard id="w22-upcoming-ap" title="Upcoming Payments (AP)" colSpan={2} titleExtra={<LiveBadge />} style={{ alignSelf: 'stretch' }}>
+        <WidgetCard id="w22-upcoming-ap" title="Upcoming Payments (AP)" colSpan={2} titleExtra={<LiveBadge />} style={{ alignSelf: 'stretch', height: '100%' }}>
           <Box style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
             <UpcomingSummaryItem label="OVERDUE" amount={345000} count="12 bills" type="overdue" />
             <Box style={{ height: 1, backgroundColor: 'var(--color-border)', margin: '4px 0', opacity: 0.5 }} />
@@ -210,6 +210,7 @@ export const PayablesTab = () => {
           </Box>
         </WidgetCard>
       </KPIGrid>
+      
     </Box>
   );
 };

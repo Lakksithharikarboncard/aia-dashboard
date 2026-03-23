@@ -13,10 +13,13 @@ const WIDGET_DISPLAY_NAMES: Record<string, string> = {
   'w4-dso':            'Days Sales Outstanding',
   'w5-dpo':            'Days Payable Outstanding',
   'w6-upcoming':       'Upcoming Payments',
+  'w7-gross-profit':   'Gross Profit',
   'w7-pnl-full':       'P&L Statement',
   'w8-rev-full':       'Revenue Trend',
   'w9-top-customers':  'Top Customers',
   'w10-cash-full':     'Cash Balance',
+  'w10-rev-vs-exp':    'Revenue vs Expense',
+  'w11-exp-breakdown': 'Expense Breakdown',
   'w12-cash-flow':     'Cash Inflow vs Outflow',
   'w13-upcoming-cash': 'Upcoming Payments',
   'w14-ar-out':        'AR Outstanding',
@@ -117,6 +120,68 @@ const PanelReport = ({ widgetId }: { widgetId: string }) => {
   const isDPO = ['w5-dpo', 'w19-dpo', 'w19-dpo-full'].includes(widgetId);
   const isUpcoming = ['w6-upcoming', 'w13-upcoming-cash', 'w22-upcoming-ap'].includes(widgetId);
   const isCash = ['w1-cash', 'w10-cash-full'].includes(widgetId);
+
+  if (widgetId === 'w7-gross-profit') {
+    return (
+      <Box>
+        <PanelSection>
+          <SectionLabel label="THIS PERIOD" />
+          <Group justify="space-between" mb={6}>
+            <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Gross Profit</Text>
+            <Text ff="Albert Sans" fw={700} size="13px" c="var(--color-text-primary)" className="num">₹18.5L</Text>
+          </Group>
+          <Group justify="space-between" mb={6}>
+            <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Gross Margin</Text>
+            <Box style={{ backgroundColor: '#EFF6FF', padding: '1px 6px', borderRadius: 4 }}>
+              <Text ff="Space Grotesk" fw={600} size="12px" c="#2563EB">41%</Text>
+            </Box>
+          </Group>
+          <Group justify="space-between" mb={6}>
+            <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Revenue</Text>
+            <Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">₹45L</Text>
+          </Group>
+          <Group justify="space-between" mb={6}>
+            <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">COGS</Text>
+            <Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">₹26.5L</Text>
+          </Group>
+          <Group justify="space-between">
+            <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Delta</Text>
+            <Text ff="Space Grotesk" size="12px" fw={600} c="var(--color-positive)">↑ ₹1.3L vs last month</Text>
+          </Group>
+        </PanelSection>
+        <PanelSection last>
+          <SectionLabel label="COMPARISON" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <TH label="METRIC" />
+                <TH label="THIS MONTH" align="right" />
+                <TH label="LAST MONTH" align="right" />
+                <TH label="CHANGE" align="right" />
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { metric: 'Revenue',      thisMonth: '₹45L',   lastMonth: '₹42L',  change: '↑ 7.1%',  up: true  },
+                { metric: 'COGS',         thisMonth: '₹26.5L', lastMonth: '₹24.8L',change: '↑ 6.9%',  up: false },
+                { metric: 'Gross Profit', thisMonth: '₹18.5L', lastMonth: '₹17.2L',change: '↑ 7.6%',  up: true  },
+                { metric: 'Gross Margin', thisMonth: '41%',    lastMonth: '40.9%', change: '↑ 0.1pp', up: true  },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.metric}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">{row.thisMonth}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" size="13px" c="var(--color-text-muted)" className="num">{row.lastMonth}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Space Grotesk" size="12px" fw={500} c={row.up ? 'var(--color-positive)' : 'var(--color-critical)'}>{row.change}</Text>
+                  </td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+        </PanelSection>
+      </Box>
+    );
+  }
 
   if (isCash) {
     return (
@@ -1177,7 +1242,275 @@ const PanelReport = ({ widgetId }: { widgetId: string }) => {
     );
   }
 
-  // Fallback for w12-cash-flow (no detail panel needed, but show something meaningful)
+  // ── Revenue vs Expense panel ──────────────────────────────────────────────
+  if (widgetId === 'w10-rev-vs-exp') {
+    return (
+      <Box>
+        <PanelSection>
+          <SectionLabel label="SUMMARY" />
+          <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            {[
+              { label: 'Revenue',     value: '₹45L',  delta: '↑ 7.1%',  up: true  },
+              { label: 'Expense',     value: '₹33L',  delta: '↑ 3.8%',  up: false },
+              { label: 'Net Surplus', value: '₹12L',  delta: '↑ 26.7%', up: true  },
+            ].map((k) => (
+              <Box key={k.label}>
+                <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)" mb={4}>{k.label}</Text>
+                <Text ff="Albert Sans" fw={700} size="22px" c={k.label === 'Net Surplus' ? 'var(--color-positive)' : 'var(--color-text-primary)'} className="num">{k.value}</Text>
+                <Text ff="Space Grotesk" size="12px" fw={600} c={k.up ? 'var(--color-positive)' : 'var(--color-critical)'} mt={2}>{k.delta}</Text>
+              </Box>
+            ))}
+          </Box>
+        </PanelSection>
+        <PanelSection>
+          <SectionLabel label="MONTHLY BREAKDOWN" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <TH label="MONTH" />
+                <TH label="REVENUE" align="right" />
+                <TH label="EXPENSE" align="right" />
+                <TH label="NET SURPLUS" align="right" />
+                <TH label="MARGIN" align="right" />
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { month: 'Jan 2024', rev: '₹30L',   exp: '₹25L',   net: '₹5L',   margin: '16.7%' },
+                { month: 'Feb 2024', rev: '₹31.5L', exp: '₹26L',   net: '₹5.5L', margin: '17.5%' },
+                { month: 'Mar 2024', rev: '₹32L',   exp: '₹26.5L', net: '₹5.5L', margin: '17.2%' },
+                { month: 'Apr 2024', rev: '₹34L',   exp: '₹27L',   net: '₹7L',   margin: '20.6%' },
+                { month: 'May 2024', rev: '₹38L',   exp: '₹28L',   net: '₹10L',  margin: '26.3%' },
+                { month: 'Jun 2024', rev: '₹45L',   exp: '₹33L',   net: '₹12L',  margin: '26.7%' },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">{row.month}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" c="var(--color-text-primary)" className="num">{row.rev}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" c="var(--color-text-primary)" className="num">{row.exp}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" c="var(--color-positive)" className="num">{row.net}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.margin}</Text></td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+        </PanelSection>
+        <PanelSection last>
+          <SectionLabel label="EXPENSE BY CATEGORY" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="CATEGORY" /><TH label="AMOUNT" align="right" /><TH label="% OF EXPENSE" align="right" /></tr>
+            </thead>
+            <tbody>
+              {[
+                { cat: 'COGS',      amt: '₹26.5L',  pct: '80%' },
+                { cat: 'Salaries',  amt: '₹3.2L',   pct: '10%' },
+                { cat: 'Rent',      amt: '₹1.2L',   pct: '4%'  },
+                { cat: 'Marketing', amt: '₹95,000',  pct: '3%'  },
+                { cat: 'Other',     amt: '₹1.15L',  pct: '3%'  },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.cat}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{row.amt}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.pct}</Text></td>
+                </TR>
+              ))}
+              <tr style={{ borderTop: '1px solid var(--color-border)' }}>
+                <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" fw={600} size="13px" c="var(--color-text-primary)">Total</Text></td>
+                <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={700} size="13px" className="num" c="var(--color-text-primary)">₹33L</Text></td>
+                <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" fw={600} size="12px" c="var(--color-text-primary)">100%</Text></td>
+              </tr>
+            </tbody>
+          </table>
+        </PanelSection>
+      </Box>
+    );
+  }
+
+  // ── Expense Breakdown panel ────────────────────────────────────────────────
+  if (widgetId === 'w11-exp-breakdown') {
+    const [selectedCat, setSelectedCat] = useState('COGS');
+    const catDetail: Record<string, { label: string; amt: string; pct: string }[]> = {
+      'COGS': [
+        { label: 'Purchase Accounts', amt: '₹22L',   pct: '83%' },
+        { label: 'Direct Expenses',   amt: '₹4.5L',  pct: '17%' },
+      ],
+      'Salaries': [],
+      'Rent': [],
+      'Marketing': [],
+      'Other': [],
+    };
+    const detail = catDetail[selectedCat] ?? [];
+
+    return (
+      <Box>
+        <PanelSection>
+          <SectionLabel label="BY CATEGORY" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <TH label="CATEGORY" />
+                <TH label="AMOUNT" align="right" />
+                <TH label="% OF TOTAL" align="right" />
+                <TH label="VS LAST MONTH" align="right" />
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { cat: 'COGS',      amt: '₹26.5L',  pct: '80%', change: '↑ 6.9%', up: true   },
+                { cat: 'Salaries',  amt: '₹3.2L',   pct: '10%', change: '↑ 1.3%', up: false  },
+                { cat: 'Rent',      amt: '₹1.2L',   pct: '4%',  change: '→ 0%',   up: null   },
+                { cat: 'Marketing', amt: '₹95,000',  pct: '3%',  change: '↑ 2.1%', up: false  },
+                { cat: 'Other',     amt: '₹1.15L',  pct: '3%',  change: '↓ 0.9%', up: null   },
+              ].map((row, i) => (
+                <tr
+                  key={i}
+                  style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', cursor: 'pointer', backgroundColor: selectedCat === row.cat ? 'var(--color-bg-hover)' : 'transparent' }}
+                  onClick={() => setSelectedCat(row.cat)}
+                >
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)" fw={selectedCat === row.cat ? 600 : 400}>{row.cat}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{row.amt}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.pct}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Space Grotesk" size="12px" c={row.up === true ? 'var(--color-critical)' : row.up === false ? 'var(--color-positive)' : 'var(--color-text-muted)'}>{row.change}</Text>
+                  </td>
+                </tr>
+              ))}
+              <tr style={{ borderTop: '1px solid var(--color-border)' }}>
+                <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" fw={600} size="13px" c="var(--color-text-primary)">Total</Text></td>
+                <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={700} size="13px" className="num" c="var(--color-text-primary)">₹33L</Text></td>
+                <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" fw={600} size="12px" c="var(--color-text-primary)">100%</Text></td>
+                <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" fw={500} c="var(--color-critical)">↑ 3.8%</Text></td>
+              </tr>
+            </tbody>
+          </table>
+        </PanelSection>
+        <PanelSection last>
+          <SectionLabel label={`${selectedCat.toUpperCase()} DETAIL`} />
+          {detail.length > 0 ? (
+            <>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr><TH label="LEDGER" /><TH label="AMOUNT" align="right" /><TH label={`% OF ${selectedCat.toUpperCase()}`} align="right" /></tr>
+                </thead>
+                <tbody>
+                  {detail.map((row, i) => (
+                    <TR key={i}>
+                      <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.label}</Text></td>
+                      <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{row.amt}</Text></td>
+                      <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.pct}</Text></td>
+                    </TR>
+                  ))}
+                </tbody>
+              </table>
+              {selectedCat === 'COGS' && (
+                <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)" mt={10} style={{ fontStyle: 'italic' }}>
+                  Direct Expenses classified under COGS only. They do not appear in Operating Expense.
+                </Text>
+              )}
+            </>
+          ) : (
+            <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)" style={{ fontStyle: 'italic' }}>
+              No sub-ledger detail available for this category.
+            </Text>
+          )}
+        </PanelSection>
+      </Box>
+    );
+  }
+
+  // ── Cash Inflow vs Outflow panel ───────────────────────────────────────────
+  if (widgetId === 'w12-cash-flow') {
+    return (
+      <Box>
+        <PanelSection>
+          <SectionLabel label="SUMMARY" />
+          <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            {[
+              { label: 'Cash In',  value: '₹48.2L', color: 'var(--color-text-primary)' },
+              { label: 'Cash Out', value: '₹35.8L', color: 'var(--color-text-primary)' },
+              { label: 'Net Flow', value: '+₹12.4L', color: 'var(--color-positive)' },
+            ].map((k) => (
+              <Box key={k.label}>
+                <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)" mb={4}>{k.label}</Text>
+                <Text ff="Albert Sans" fw={700} size="22px" c={k.color} className="num">{k.value}</Text>
+              </Box>
+            ))}
+          </Box>
+        </PanelSection>
+        <PanelSection>
+          <SectionLabel label="WEEKLY BREAKDOWN" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="WEEK" /><TH label="CASH IN" align="right" /><TH label="CASH OUT" align="right" /><TH label="NET" align="right" /></tr>
+            </thead>
+            <tbody>
+              {[
+                { week: 'W1 (1–7 Nov)',    inflow: '₹10.2L', outflow: '₹8.8L',  net: '+₹1.4L',  positive: true  },
+                { week: 'W2 (8–14 Nov)',   inflow: '₹9.8L',  outflow: '₹10.1L', net: '−₹0.3L',  positive: false },
+                { week: 'W3 (15–21 Nov)',  inflow: '₹16.5L', outflow: '₹9.4L',  net: '+₹7.1L',  positive: true  },
+                { week: 'W4 (22–30 Nov)',  inflow: '₹11.7L', outflow: '₹7.5L',  net: '+₹4.2L',  positive: true  },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">{row.week}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{row.inflow}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{row.outflow}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c={row.positive ? 'var(--color-positive)' : 'var(--color-critical)'}>{row.net}</Text></td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+        </PanelSection>
+        <PanelSection>
+          <SectionLabel label="INFLOW SOURCES" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="SOURCE" /><TH label="AMOUNT" align="right" /><TH label="% OF INFLOW" align="right" /></tr>
+            </thead>
+            <tbody>
+              {[
+                { source: 'Customer payments', amt: '₹42.5L', pct: '88%' },
+                { source: 'Advance receipts',  amt: '₹3.8L',  pct: '8%'  },
+                { source: 'Other inflows',      amt: '₹1.9L',  pct: '4%'  },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.source}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{row.amt}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.pct}</Text></td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+        </PanelSection>
+        <PanelSection last>
+          <SectionLabel label="OUTFLOW CATEGORIES" />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><TH label="CATEGORY" /><TH label="AMOUNT" align="right" /><TH label="% OF OUTFLOW" align="right" /></tr>
+            </thead>
+            <tbody>
+              {[
+                { cat: 'Vendor payments', amt: '₹18.5L', pct: '52%' },
+                { cat: 'Salaries',        amt: '₹8.2L',  pct: '23%' },
+                { cat: 'Rent',            amt: '₹3.5L',  pct: '10%' },
+                { cat: 'Tax payments',    amt: '₹2.8L',  pct: '8%'  },
+                { cat: 'Other',           amt: '₹2.8L',  pct: '7%'  },
+              ].map((row, i) => (
+                <TR key={i}>
+                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.cat}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" fw={600} size="13px" className="num" c="var(--color-text-primary)">{row.amt}</Text></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.pct}</Text></td>
+                </TR>
+              ))}
+            </tbody>
+          </table>
+          <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)" mt={12} style={{ fontStyle: 'italic' }}>
+            Internal transfers excluded from both inflow and outflow.
+          </Text>
+        </PanelSection>
+      </Box>
+    );
+  }
+
   return (
     <Box py={40} style={{ textAlign: 'center' }}>
       <Text ff="Space Grotesk" size="sm" c="var(--color-text-ghost)">

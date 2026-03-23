@@ -6,9 +6,19 @@ import { AIInsightsAccordion } from '../components/shared/AIInsightsAccordion';
 import { GrainToggle, type Grain } from '../components/shared/GrainToggle';
 import { KPIGrid } from '../components/widgets/KPIGrid';
 import { AreaChart } from '@mantine/charts';
+import {
+  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip as RechartTooltip, Legend, ResponsiveContainer,
+} from 'recharts';
 import { formatCurrency } from '../utils/formatters';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
+
+const SPARKLINE_DATA = [
+  { m: 'Jan', revenue: 3000000 }, { m: 'Feb', revenue: 3500000 },
+  { m: 'Mar', revenue: 3200000 }, { m: 'Apr', revenue: 4000000 },
+  { m: 'May', revenue: 4200000 }, { m: 'Jun', revenue: 4500000 },
+];
 
 const REVENUE_DATA: Record<Grain, { date: string; revenue: number }[]> = {
   Day: [
@@ -18,8 +28,8 @@ const REVENUE_DATA: Record<Grain, { date: string; revenue: number }[]> = {
     { date: '30 Jun', revenue: 200000 },
   ],
   Week: [
-    { date: 'W1', revenue: 900000  }, { date: 'W2', revenue: 1100000 },
-    { date: 'W3', revenue: 980000  }, { date: 'W4', revenue: 1020000 },
+    { date: 'W1', revenue: 900000 }, { date: 'W2', revenue: 1100000 },
+    { date: 'W3', revenue: 980000 }, { date: 'W4', revenue: 1020000 },
   ],
   Month: [
     { date: 'Jan', revenue: 3000000 }, { date: 'Feb', revenue: 3500000 },
@@ -28,25 +38,36 @@ const REVENUE_DATA: Record<Grain, { date: string; revenue: number }[]> = {
   ],
 };
 
-const GRAIN_STATS: Record<Grain, { current: number; prev: number; currentLabel: string; changeLabel: string }> = {
-  Day:   { current: 200000, prev: 190000, currentLabel: 'Today',     changeLabel: 'vs yesterday' },
-  Week:  { current: 1020000, prev: 980000, currentLabel: 'This week', changeLabel: 'vs last week' },
-  Month: { current: 4500000, prev: 4200000, currentLabel: 'This month', changeLabel: 'vs last month' },
+const GRAIN_STATS: Record<Grain, { current: number; prev: number; label: string; changeLabel: string }> = {
+  Day:   { current: 200000,  prev: 190000,  label: 'Today',      changeLabel: 'vs yesterday'  },
+  Week:  { current: 1020000, prev: 980000,  label: 'This week',  changeLabel: 'vs last week'  },
+  Month: { current: 4500000, prev: 4200000, label: 'This month', changeLabel: 'vs last month' },
 };
 
-// ─── Shared components ────────────────────────────────────────────────────────
+// Values in L (lakhs) for the composed chart
+const REV_VS_EXP_DATA = [
+  { month: 'Jan', Revenue: 30,   Expense: 25,   'Net Surplus': 5   },
+  { month: 'Feb', Revenue: 31.5, Expense: 26,   'Net Surplus': 5.5 },
+  { month: 'Mar', Revenue: 32,   Expense: 26.5, 'Net Surplus': 5.5 },
+  { month: 'Apr', Revenue: 34,   Expense: 27,   'Net Surplus': 7   },
+  { month: 'May', Revenue: 38,   Expense: 28,   'Net Surplus': 10  },
+  { month: 'Jun', Revenue: 45,   Expense: 33,   'Net Surplus': 12  },
+];
+
+const EXPENSE_CATEGORIES = [
+  { label: 'COGS',      amount: 2650000, color: '#2563EB' },
+  { label: 'Salaries',  amount: 320000,  color: '#6366F1' },
+  { label: 'Rent',      amount: 120000,  color: '#0EA5E9' },
+  { label: 'Marketing', amount: 95000,   color: '#8B5CF6' },
+  { label: 'Other',     amount: 115000,  color: '#94A3B8' },
+];
+const EXPENSE_TOTAL = EXPENSE_CATEGORIES.reduce((s, c) => s + c.amount, 0);
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const LiveBadge = () => (
-  <Box style={{ backgroundColor: 'var(--color-live-badge)', color: 'white', padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+  <Box style={{ backgroundColor: 'var(--color-live-badge)', color: 'white', padding: '2px 8px', borderRadius: 10, fontSize: 10, fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
     LIVE
-  </Box>
-);
-
-const StatusPill = ({ label, sentiment }: { label: string; sentiment: 'positive' | 'negative' }) => (
-  <Box style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: '10px', backgroundColor: sentiment === 'positive' ? 'var(--color-positive-bg)' : 'var(--color-critical-bg)' }}>
-    <Text ff="Space Grotesk" size="11px" fw={600} c={sentiment === 'positive' ? 'var(--color-positive)' : 'var(--color-critical)'}>
-      {label}
-    </Text>
   </Box>
 );
 
@@ -61,9 +82,8 @@ export const OverviewTab = () => {
     <Box p="24px">
       <KPIGrid>
 
-        {/* ── Row 1: Three KPI cards ──────────────────────────── */}
+        {/* ── Zone A Row 1: Cash Balance | P&L Summary | Revenue Trend ── */}
 
-        {/* W1 — Cash Balance */}
         <WidgetCard id="w1-cash" title="Total Cash Balance" colSpan={4} isZoneA>
           <Box style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
             <Text ff="Albert Sans" fw={700} size="32px" c="var(--color-text-primary)" className="num">
@@ -73,52 +93,220 @@ export const OverviewTab = () => {
           </Box>
         </WidgetCard>
 
-        {/* W4 — DSO */}
-        <WidgetCard id="w4-dso" title="Days Sales Outstanding" colSpan={4} isZoneA>
-          <Box style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <Text ff="Albert Sans" fw={700} size="32px" c="var(--color-text-primary)" className="num">45 days</Text>
-            <StatusPill label="15 days above target" sentiment="negative" />
-            <Box mt={4}><TrendBadge value={12} label="vs last month" type="dso" /></Box>
+        <WidgetCard id="w2-pnl-compressed" title="P&L Summary" colSpan={4} isZoneA>
+          <Box style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+            <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Group justify="space-between">
+                <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Revenue</Text>
+                <Text ff="Albert Sans" fw={500} size="14px" c="var(--color-text-primary)" className="num">{formatCurrency(4500000)}</Text>
+              </Group>
+              <Group justify="space-between">
+                <Group gap={6}>
+                  <Text ff="Space Grotesk" fw={500} size="13px" c="var(--color-text-secondary)">Gross Profit</Text>
+                  <Box style={{ backgroundColor: '#EFF6FF', padding: '1px 6px', borderRadius: 4 }}>
+                    <Text ff="Space Grotesk" size="11px" fw={600} c="#2563EB">41%</Text>
+                  </Box>
+                </Group>
+                <Text ff="Albert Sans" fw={500} size="14px" c="var(--color-text-primary)" className="num">{formatCurrency(1850000)}</Text>
+              </Group>
+            </Box>
+            <Box style={{ paddingTop: 12, borderTop: '1px solid var(--color-border)' }}>
+              <Group justify="space-between">
+                <Text ff="Space Grotesk" fw={700} size="14px" c="var(--color-text-primary)">Operating Profit</Text>
+                <Text ff="Albert Sans" fw={700} size="16px" c="var(--color-text-primary)" className="num">{formatCurrency(1200000)}</Text>
+              </Group>
+            </Box>
           </Box>
         </WidgetCard>
 
-        {/* W5 — DPO */}
-        <WidgetCard id="w5-dpo" title="Days Payable Outstanding" colSpan={4} isZoneA>
-          <Box style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <Text ff="Albert Sans" fw={700} size="32px" c="var(--color-text-primary)" className="num">38 days</Text>
-            <StatusPill label="Within target range" sentiment="positive" />
-            <Box mt={4}><TrendBadge value={-5} label="vs last month" /></Box>
-          </Box>
+        <WidgetCard id="w3-rev-spark" title="Revenue Trend" colSpan={4} isZoneA>
+          <AreaChart
+            h={52}
+            data={SPARKLINE_DATA}
+            dataKey="m"
+            series={[{ name: 'revenue', color: '#2563EB', label: 'Revenue' }]}
+            curveType="monotone"
+            withDots={false}
+            gridAxis="none"
+            fillOpacity={0.1}
+            strokeWidth={2}
+            withGradient
+            xAxisProps={{ hide: true }}
+            yAxisProps={{ hide: true }}
+            style={{ margin: '-4px -8px 0' }}
+          />
+          <Group mt={10} gap={6} align="baseline">
+            <Text ff="Albert Sans" fw={700} size="24px" c="var(--color-text-primary)" className="num">
+              {formatCurrency(4500000)}
+            </Text>
+            <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">this month</Text>
+          </Group>
+          <TrendBadge value={7.1} label="vs last month" type="revenue" />
         </WidgetCard>
 
-        {/* ── Row 2: Upcoming Payments — full width ───────────── */}
+        {/* ── Zone A Row 2: Upcoming Payments (full width, 3 buckets) ── */}
 
         <WidgetCard id="w6-upcoming" title="Upcoming Payments" colSpan={12} isZoneA titleExtra={<LiveBadge />}>
-          <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-            <Box style={{ backgroundColor: 'var(--color-critical-bg)', padding: '14px 18px', borderRadius: 'var(--radius-inner)', border: '1px solid #FECACA' }}>
-              <Text ff="Space Grotesk" size="10px" fw={600} c="var(--color-critical)" mb={6} style={{ letterSpacing: '0.8px' }}>OVERDUE</Text>
-              <Text ff="Albert Sans" size="22px" fw={700} c="var(--color-critical)" className="num">{formatCurrency(345000)}</Text>
+          <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)" mb={12} style={{ fontStyle: 'italic' }}>
+            Always shows payments due relative to today — not affected by date filter
+          </Text>
+          <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-inner)', overflow: 'hidden' }}>
+            {/* OVERDUE */}
+            <Box style={{ backgroundColor: 'var(--color-critical-bg)', padding: '16px 20px', borderRight: '1px solid var(--color-border)' }}>
+              <Text ff="Space Grotesk" size="10px" fw={600} c="var(--color-critical)" mb={4} style={{ letterSpacing: '0.8px' }}>OVERDUE</Text>
+              <Text ff="Albert Sans" fw={700} size="28px" c="var(--color-critical)" className="num">{formatCurrency(345000)}</Text>
               <Text ff="Space Grotesk" size="12px" c="var(--color-critical)" fw={500} mt={2}>12 bills</Text>
             </Box>
-            <Box style={{ backgroundColor: 'var(--color-bg-hover)', padding: '14px 18px', borderRadius: 'var(--radius-inner)', border: '1px solid var(--color-border)' }}>
-              <Text ff="Space Grotesk" size="10px" fw={600} c="var(--color-text-muted)" mb={6} style={{ letterSpacing: '0.8px' }}>DUE IN 0–7 DAYS</Text>
-              <Text ff="Albert Sans" size="22px" fw={700} c="var(--color-text-primary)" className="num">{formatCurrency(180000)}</Text>
+            {/* 0–7 DAYS */}
+            <Box style={{ backgroundColor: 'white', padding: '16px 20px', borderRight: '1px solid var(--color-border)' }}>
+              <Text ff="Space Grotesk" size="10px" fw={600} c="var(--color-text-muted)" mb={4} style={{ letterSpacing: '0.8px' }}>DUE IN 0–7 DAYS</Text>
+              <Text ff="Albert Sans" fw={700} size="28px" c="var(--color-text-primary)" className="num">{formatCurrency(180000)}</Text>
               <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)" mt={2}>5 bills</Text>
             </Box>
-            <Box style={{ backgroundColor: 'var(--color-bg-hover)', padding: '14px 18px', borderRadius: 'var(--radius-inner)', border: '1px solid var(--color-border)' }}>
-              <Text ff="Space Grotesk" size="10px" fw={600} c="var(--color-text-muted)" mb={6} style={{ letterSpacing: '0.8px' }}>DUE IN 8–15 DAYS</Text>
-              <Text ff="Albert Sans" size="22px" fw={700} c="var(--color-text-primary)" className="num">{formatCurrency(420000)}</Text>
+            {/* 8–15 DAYS */}
+            <Box style={{ backgroundColor: 'white', padding: '16px 20px' }}>
+              <Text ff="Space Grotesk" size="10px" fw={600} c="var(--color-text-muted)" mb={4} style={{ letterSpacing: '0.8px' }}>DUE IN 8–15 DAYS</Text>
+              <Text ff="Albert Sans" fw={700} size="28px" c="var(--color-text-primary)" className="num">{formatCurrency(420000)}</Text>
               <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)" mt={2}>8 bills</Text>
             </Box>
           </Box>
         </WidgetCard>
 
-        {/* ── Row 3: AI Insights ──────────────────────────────── */}
+        {/* ── AI Insights ────────────────────────────────────────────── */}
         <AIInsightsAccordion />
 
-        {/* ── Row 4: P&L + Revenue Trend ──────────────────────── */}
+        {/* ── Zone B Row 1: Gross Profit (3col) | Revenue vs Expense (9col) ── */}
 
-        {/* W7 — P&L Statement */}
+        <WidgetCard id="w7-gross-profit" title="Gross Profit" colSpan={3}>
+          <Box style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+            <Box>
+              <Group gap={8} align="baseline" mb={6}>
+                <Text ff="Albert Sans" fw={700} size="28px" c="var(--color-text-primary)" className="num">
+                  {formatCurrency(1850000)}
+                </Text>
+                <Box style={{ backgroundColor: '#EFF6FF', padding: '1px 6px', borderRadius: 4 }}>
+                  <Text ff="Space Grotesk" fw={500} size="11px" c="#2563EB">41% gross margin</Text>
+                </Box>
+              </Group>
+              <TrendBadge value={7.6} label="vs last month" type="revenue" />
+            </Box>
+            <Box style={{ borderTop: '1px solid var(--color-border)', paddingTop: 12, marginTop: 12 }}>
+              <Group justify="space-between" mb={6}>
+                <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Revenue</Text>
+                <Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(4500000)}</Text>
+              </Group>
+              <Group justify="space-between">
+                <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">COGS</Text>
+                <Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(2650000)}</Text>
+              </Group>
+            </Box>
+          </Box>
+        </WidgetCard>
+
+        {/* W10 — Revenue vs Expense (ComposedChart with net surplus line) */}
+        <WidgetCard id="w10-rev-vs-exp" title="Revenue vs Expense" colSpan={9}>
+          <Group justify="space-between" align="flex-end" mb={16}>
+            <Box>
+              <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)" mb={2}>Net surplus · Jun</Text>
+              <Group gap={8} align="baseline">
+                <Text ff="Albert Sans" fw={700} size="24px" c="var(--color-text-primary)" className="num">
+                  {formatCurrency(1200000)}
+                </Text>
+                <Box style={{ display: 'inline-flex', padding: '2px 7px', borderRadius: 10, backgroundColor: 'var(--color-positive-bg)' }}>
+                  <Text ff="Space Grotesk" fw={600} size="12px" c="var(--color-positive)">↑ 26.7%</Text>
+                </Box>
+              </Group>
+            </Box>
+            <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)">vs last month</Text>
+          </Group>
+          <ResponsiveContainer width="100%" height={180}>
+            <ComposedChart data={REV_VS_EXP_DATA} margin={{ top: 4, right: 40, left: 0, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke="#F3F4F6" />
+              <XAxis
+                dataKey="month"
+                tick={{ fontSize: 11, fill: '#9CA3AF', fontFamily: 'Space Grotesk' }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                yAxisId="left"
+                tickFormatter={(v) => `₹${v}L`}
+                tick={{ fontSize: 11, fill: '#9CA3AF', fontFamily: 'Space Grotesk' }}
+                axisLine={false}
+                tickLine={false}
+                width={48}
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                tickFormatter={(v) => `₹${v}L`}
+                tick={{ fontSize: 11, fill: '#9CA3AF', fontFamily: 'Space Grotesk' }}
+                axisLine={false}
+                tickLine={false}
+                width={40}
+                domain={[0, 20]}
+              />
+              <RechartTooltip
+                formatter={(value: number, name: string) => [`₹${value}L`, name]}
+                contentStyle={{ fontFamily: 'Space Grotesk', fontSize: 12, border: '1px solid #E5E7EB', borderRadius: 8 }}
+              />
+              <Legend
+                wrapperStyle={{ fontFamily: 'Space Grotesk', fontSize: 12, paddingTop: 8 }}
+                iconType="square"
+              />
+              <Bar yAxisId="left" dataKey="Revenue" fill="#2563EB" radius={[3, 3, 0, 0]} maxBarSize={32} />
+              <Bar yAxisId="left" dataKey="Expense" fill="#CBD5E1" radius={[3, 3, 0, 0]} maxBarSize={32} />
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="Net Surplus"
+                stroke="#2563EB"
+                strokeWidth={2}
+                dot={{ fill: '#2563EB', stroke: '#FFFFFF', strokeWidth: 2, r: 5 }}
+                activeDot={{ r: 6, stroke: '#EFF6FF', strokeWidth: 2 }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </WidgetCard>
+
+        {/* ── Zone B Row 2: Expense Breakdown (full width) ─────────── */}
+
+        <WidgetCard id="w11-exp-breakdown" title="Expense Breakdown" colSpan={12}>
+          <Group justify="space-between" mb={20} align="baseline">
+            <Group gap={8} align="baseline">
+              <Text ff="Albert Sans" fw={700} size="22px" c="var(--color-text-primary)" className="num">
+                {formatCurrency(EXPENSE_TOTAL)}
+              </Text>
+              <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">total this month</Text>
+            </Group>
+            <TrendBadge value={3.8} label="vs last month" />
+          </Group>
+          <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24 }}>
+            {EXPENSE_CATEGORIES.map((cat) => {
+              const pct = Math.round((cat.amount / EXPENSE_TOTAL) * 100);
+              return (
+                <Box key={cat.label}>
+                  <Group justify="space-between" mb={6}>
+                    <Group gap={6} align="center">
+                      <Box style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: cat.color, flexShrink: 0 }} />
+                      <Text ff="Space Grotesk" size="12px" fw={500} c="var(--color-text-secondary)">{cat.label}</Text>
+                    </Group>
+                    <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)">{pct}%</Text>
+                  </Group>
+                  <Text ff="Albert Sans" fw={700} size="18px" c="var(--color-text-primary)" className="num" mb={6}>
+                    {formatCurrency(cat.amount)}
+                  </Text>
+                  <Box style={{ height: 5, backgroundColor: 'var(--color-bg-hover)', borderRadius: 3, overflow: 'hidden' }}>
+                    <Box style={{ height: '100%', width: `${pct}%`, backgroundColor: cat.color, borderRadius: 3, opacity: 0.85 }} />
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        </WidgetCard>
+
+        {/* ── Zone B Row 3: P&L Statement (4col) | Revenue Trend (8col) ── */}
+
         <WidgetCard id="w7-pnl-full" title="P&L Statement" colSpan={4}>
           <Box style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <Group justify="space-between">
@@ -142,7 +330,7 @@ export const OverviewTab = () => {
               <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Operating Expense</Text>
               <Text ff="Albert Sans" fw={400} size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(650000)}</Text>
             </Group>
-            <Box style={{ flex: 1, minHeight: 20 }} />
+            <Box style={{ flex: 1, minHeight: 16 }} />
             <Group justify="space-between" pt={12} style={{ borderTop: '1px solid var(--color-border)' }}>
               <Tooltip label="Revenue minus cost of goods and operating expenses, before tax.">
                 <Text ff="Space Grotesk" fw={700} size="14px" c="var(--color-text-primary)" style={{ cursor: 'help', borderBottom: '1px dashed var(--color-border-strong)' }}>
@@ -154,56 +342,37 @@ export const OverviewTab = () => {
           </Box>
         </WidgetCard>
 
-        {/* W8 — Revenue Trend (improved) */}
         <WidgetCard
           id="w8-rev-full"
           title="Revenue Trend"
           colSpan={8}
           titleExtra={<GrainToggle value={revGrain} onChange={setRevGrain} />}
         >
-          {/* Stat header row */}
-          <Group justify="space-between" align="flex-end" mb={20}>
+          <Group justify="space-between" align="flex-end" mb={16}>
             <Box>
-              <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)" mb={2}>{stats.currentLabel}</Text>
-              <Group gap={10} align="baseline">
-                <Text ff="Albert Sans" fw={700} size="28px" c="var(--color-text-primary)" className="num">
+              <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)" mb={2}>{stats.label}</Text>
+              <Group gap={8} align="baseline">
+                <Text ff="Albert Sans" fw={700} size="24px" c="var(--color-text-primary)" className="num">
                   {formatCurrency(stats.current)}
                 </Text>
-                <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px', borderRadius: 10, backgroundColor: Number(pctChange) >= 0 ? 'var(--color-positive-bg)' : 'var(--color-critical-bg)' }}>
+                <Box style={{ display: 'inline-flex', padding: '2px 7px', borderRadius: 10, backgroundColor: Number(pctChange) >= 0 ? 'var(--color-positive-bg)' : 'var(--color-critical-bg)' }}>
                   <Text ff="Space Grotesk" fw={600} size="12px" c={Number(pctChange) >= 0 ? 'var(--color-positive)' : 'var(--color-critical)'}>
-                    {Number(pctChange) >= 0 ? '↑' : '↓'} {Math.abs(Number(pctChange))}% {stats.changeLabel}
+                    {Number(pctChange) >= 0 ? '↑' : '↓'} {Math.abs(Number(pctChange))}%
                   </Text>
                 </Box>
               </Group>
             </Box>
-
-            {/* Mini legend */}
-            <Group gap={16}>
-              {REVENUE_DATA[revGrain].slice(-2).map((d, i) => (
-                <Box key={i} style={{ textAlign: 'right' }}>
-                  <Text ff="Space Grotesk" size="10px" c="var(--color-text-ghost)">{d.date}</Text>
-                  <Text ff="Albert Sans" fw={600} size="13px" c={i === 1 ? 'var(--color-accent-blue)' : 'var(--color-text-muted)'} className="num">
-                    {formatCurrency(d.revenue)}
-                  </Text>
-                </Box>
-              ))}
-            </Group>
+            <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)">{stats.changeLabel}</Text>
           </Group>
-
-          {/* Area chart */}
           <AreaChart
-            h={180}
+            h={160}
             data={REVENUE_DATA[revGrain]}
             dataKey="date"
-            series={[{
-              name: 'revenue',
-              color: '#2563EB',
-              label: 'Revenue',
-            }]}
+            series={[{ name: 'revenue', color: '#2563EB', label: 'Revenue' }]}
             curveType="monotone"
             withDots
             withGradient
-            fillOpacity={0.18}
+            fillOpacity={0.15}
             gridAxis="y"
             tickLine="none"
             strokeWidth={2.5}
@@ -216,9 +385,8 @@ export const OverviewTab = () => {
           />
         </WidgetCard>
 
-        {/* ── Row 5: Top Customers ────────────────────────────── */}
+        {/* ── Zone B Row 4: Top Customers (full width) ─────────────── */}
 
-        {/* W9 — Top Customers */}
         <WidgetCard id="w9-top-customers" title="Top Customers by Revenue" colSpan={12}>
           <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
             {[
@@ -238,9 +406,8 @@ export const OverviewTab = () => {
                   <Text ff="Albert Sans" fw={700} size="18px" c="var(--color-text-primary)" className="num">{formatCurrency(c.amount)}</Text>
                   <Text ff="Space Grotesk" size="12px" c="var(--color-text-ghost)">{c.share}</Text>
                 </Group>
-                {/* Stacked bar */}
                 <Box style={{ height: 6, backgroundColor: 'var(--color-bg-hover)', borderRadius: 3, overflow: 'hidden' }}>
-                  <Box style={{ height: '100%', width: `${c.percent}%`, background: `linear-gradient(90deg, #2563EB, #60A5FA)`, borderRadius: 3 }} />
+                  <Box style={{ height: '100%', width: `${c.percent}%`, background: 'linear-gradient(90deg, #2563EB, #60A5FA)', borderRadius: 3 }} />
                 </Box>
               </Box>
             ))}

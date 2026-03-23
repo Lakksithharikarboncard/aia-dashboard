@@ -104,12 +104,12 @@ export const CashTab = () => {
               </Text>
               <TrendBadge value={8.5} label="vs last month" type="cash" />
             </Box>
-            <Box mt={16}>
-              <Group justify="space-between" py={10} style={{ borderTop: '1px solid var(--color-border)' }}>
+            <Box mt={16} style={{ borderTop: '1px solid var(--color-border)', paddingTop: 16 }}>
+              <Group justify="space-between" pb={10}>
                 <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">HDFC Current A/c</Text>
                 <Text ff="Albert Sans" fw={600} size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(820000)}</Text>
               </Group>
-              <Group justify="space-between" py={10} style={{ borderTop: '1px solid var(--color-border)' }}>
+              <Group justify="space-between" pt={10} style={{ borderTop: '1px solid var(--color-border)' }}>
                 <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">SBI Savings A/c</Text>
                 <Text ff="Albert Sans" fw={600} size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(425000)}</Text>
               </Group>

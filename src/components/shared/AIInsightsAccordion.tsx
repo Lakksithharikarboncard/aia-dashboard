@@ -19,35 +19,35 @@ interface Insight {
 
 const INSIGHTS_DATA: Insight[] = [
   {
-    id: '1',
+    id: 'insight-1',
     severity: 'critical',
     source: 'Receivables',
     title: 'Overdue receivables up 34% vs last month',
     summary: '₹4,20,000 overdue across 8 invoices — up from ₹3,12,000',
-    whatFound: 'Overdue AR increased from ₹3,12,000 (last month) to ₹4,20,000 (this month) — a 34.6% rise across 8 open invoices.',
+    whatFound: 'Overdue AR increased from ₹3,12,000 last month to ₹4,20,000 this month — a 34.6% rise across 8 open invoices.',
     whyMatters: 'Sustained growth in overdue balances may indicate collections slippage and could pressure working capital within 30–45 days.',
     suggestedReview: 'Review the 61–90 day aging bucket in Payables & Receivables for customers approaching write-off risk.',
     basedOn: 'AR Outstanding · AR Aging · This Month vs Last Month',
   },
   {
-    id: '2',
+    id: 'insight-2',
     severity: 'watch',
     source: 'Overview',
     title: 'DSO increased 12% — Acme Corp contributing 14 days',
     summary: '45 days vs 40 days target — Acme Corp is the primary driver',
-    whatFound: 'DSO rose from 40 days (last month) to 45 days (this month). Acme Corp accounts for 14 of those 45 days based on outstanding invoice value.',
-    whyMatters: 'A single customer driving >30% of DSO is a concentration risk. If collection delays continue, it may distort overall receivables health.',
-    suggestedReview: "Verify whether Acme Corp's invoices have a contested status or payment delay pattern over the last 2–3 periods.",
+    whatFound: 'DSO rose from 40 days last month to 45 days this month. Acme Corp accounts for 14 of those 45 days based on outstanding invoice value.',
+    whyMatters: 'A single customer driving more than 30% of DSO is a concentration risk. If collection delays continue, it may distort overall receivables health.',
+    suggestedReview: 'Verify whether Acme Corp invoices have a contested status or recurring delay pattern over the last 2–3 periods.',
     basedOn: 'DSO · AR Outstanding · Customer Ledger · This Month',
   },
   {
-    id: '3',
+    id: 'insight-3',
     severity: 'positive',
     source: 'Overview',
     title: 'Operating margin improved to 26.7%',
     summary: '+5.2pp vs prior period — driven by stable COGS and lower indirect expense',
     whatFound: 'Operating margin reached 26.7% this month, up from 21.5% last month (+5.2pp). Revenue grew 7.1% while operating expense held flat.',
-    whyMatters: 'Margin expansion alongside revenue growth suggests operating leverage is beginning to work. This is a signal worth monitoring for consistency.',
+    whyMatters: 'Margin expansion alongside revenue growth suggests operating leverage is beginning to work — a signal worth monitoring for consistency.',
     suggestedReview: 'Assess whether the expense reduction is structural or timing-related by comparing against the prior quarter average.',
     basedOn: 'P&L Summary · Revenue Trend · This Month vs Last Month',
   },
@@ -123,7 +123,7 @@ export const AIInsightsAccordion = () => {
                   fw={400}
                   size="13px"
                   c="var(--color-text-muted)"
-                  style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 520 }}
                 >
                   {insight.summary}
                 </Text>

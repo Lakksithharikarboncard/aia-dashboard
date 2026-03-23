@@ -67,8 +67,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
               </Text>
             </Box>
 
-            {/* Divider */}
-            <Box style={{ width: 1, height: 24, backgroundColor: 'var(--color-border)', alignSelf: 'center', marginRight: 20 }} />
+            {/* Org name */}
+            <Box style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 16px', borderRight: '1px solid var(--color-border)', height: '100%' }}>
+              <Box style={{ width: 24, height: 24, backgroundColor: '#2563EB', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Text ff="Space Grotesk" fw={600} size="12px" c="white" style={{ lineHeight: 1 }}>A</Text>
+              </Box>
+              <Text ff="Space Grotesk" fw={500} size="13px" c="var(--color-text-secondary)">Acme Corp</Text>
+            </Box>
 
             {/* Nav tabs */}
             {NAV_ITEMS.map(({ tab, icon: Icon, label }) => (
