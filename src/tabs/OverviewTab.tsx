@@ -55,7 +55,7 @@ const TodayVsYesterday = ({ today, yesterday, delta, sentiment }: TodayVsYesterd
     {[
       { heading: 'TODAY',     value: today,     muted: false },
       { heading: 'YESTERDAY', value: yesterday, muted: true  },
-    ].map(({ heading, value, muted }, i) => (
+    ].map(({ heading, value, muted }) => (
       <Box key={heading} style={{
         padding: '7px 10px',
         borderRight: '1px solid var(--color-border)',
@@ -394,7 +394,7 @@ export const OverviewTab = () => {
                 {[
                   { heading: 'TODAY',     value: '₹12.45L', muted: false },
                   { heading: 'YESTERDAY', value: '₹12.0L',  muted: true  },
-                ].map(({ heading, value, muted }, i) => (
+                ].map(({ heading, value, muted }) => (
                   <Box key={heading} style={{ padding: '7px 10px', borderRight: '1px solid rgba(16,185,129,0.2)' }}>
                     <Text ff="Space Grotesk" size="9px" fw={700} c="#6B9E8A"
                       style={{ textTransform: 'uppercase', letterSpacing: '0.6px', lineHeight: 1, marginBottom: 3 }}>
