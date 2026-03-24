@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Box, Group, Text } from '@mantine/core';
-import { IconTrendingUp, IconArrowNarrowUp } from '@tabler/icons-react';
+import { IconTrendingUp } from '@tabler/icons-react';
 import { WidgetCard } from '../components/widgets/WidgetCard';
 import { TrendBadge } from '../components/shared/TrendBadge';
 import { AIInsightsAccordion } from '../components/shared/AIInsightsAccordion';
@@ -9,7 +9,7 @@ import { KPIGrid } from '../components/widgets/KPIGrid';
 import { AreaChart } from '@mantine/charts';
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip as RechartTooltip, ResponsiveContainer, Cell,
+  Tooltip as RechartTooltip, ResponsiveContainer, Cell, LabelList,
   AreaChart as RechartsAreaChart, Area,
 } from 'recharts';
 import { formatCurrency } from '../utils/formatters';
@@ -32,6 +32,58 @@ const DailyPulseBadge = ({ label, sentiment }: { label: string; sentiment: Pulse
     </Box>
   );
 };
+
+// ─── Today vs Yesterday strip ─────────────────────────────────────────────────
+
+interface TodayVsYesterdayProps {
+  today: string;
+  yesterday: string;
+  delta: string;
+  sentiment: 'positive' | 'negative';
+}
+
+const TodayVsYesterday = ({ today, yesterday, delta, sentiment }: TodayVsYesterdayProps) => (
+  <Box style={{
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr auto',
+    marginTop: 10,
+    border: '1px solid var(--color-border)',
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: 'var(--color-bg-hover)',
+  }}>
+    {[
+      { heading: 'TODAY',     value: today,     muted: false },
+      { heading: 'YESTERDAY', value: yesterday, muted: true  },
+    ].map(({ heading, value, muted }, i) => (
+      <Box key={heading} style={{
+        padding: '7px 10px',
+        borderRight: '1px solid var(--color-border)',
+      }}>
+        <Text ff="Space Grotesk" size="9px" fw={700} c="var(--color-text-ghost)"
+          style={{ textTransform: 'uppercase', letterSpacing: '0.6px', lineHeight: 1, marginBottom: 3 }}>
+          {heading}
+        </Text>
+        <Text ff="Albert Sans" fw={700} size="13px" className="num"
+          c={muted ? 'var(--color-text-muted)' : 'var(--color-text-primary)'}
+          style={{ lineHeight: 1 }}>
+          {value}
+        </Text>
+      </Box>
+    ))}
+    <Box style={{ padding: '7px 10px', display: 'flex', alignItems: 'center' }}>
+      <Box style={{
+        display: 'inline-flex', padding: '3px 7px', borderRadius: 4,
+        backgroundColor: sentiment === 'positive' ? 'var(--color-positive-bg)' : 'var(--color-critical-bg)',
+      }}>
+        <Text ff="Space Grotesk" fw={600} size="11px"
+          c={sentiment === 'positive' ? 'var(--color-positive)' : 'var(--color-critical)'}>
+          {delta}
+        </Text>
+      </Box>
+    </Box>
+  </Box>
+);
 
 // ─── Revenue vs Expense: custom tooltip & legend ─────────────────────────────
 
@@ -277,6 +329,11 @@ export const OverviewTab = () => {
                 <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)">vs last month</Text>
               </Group>
               <Box style={{ height: 1, backgroundColor: '#F3F4F6' }} />
+              {isCurrentPeriod && (
+                <TodayVsYesterday
+                  today="₹18.5L" yesterday="₹17.2L" delta="↑ ₹1.3L" sentiment="positive"
+                />
+              )}
             </Box>
 
             {/* Sparkline — flex: 1 now works, absolute gives AreaChart a pixel height */}
@@ -309,40 +366,67 @@ export const OverviewTab = () => {
         <WidgetCard id="w10-cash-full" title="" colSpan={3}
           style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 270 }}>
 
-          {/* Header zone — flexShrink: 0 */}
+          {/* Header zone — green tint gradient */}
           <Box style={{
             flexShrink: 0,
-            background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
+            background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
             borderBottom: '1px solid var(--color-border)',
-            padding: '20px 24px 18px',
+            padding: '22px 24px 18px',
           }}>
             <Text ff="Space Grotesk" fw={600} size="11px" c="var(--color-text-ghost)"
-              style={{ textTransform: 'uppercase', letterSpacing: '0.8px' }} mb={10}>
+              style={{ textTransform: 'uppercase', letterSpacing: '0.8px' }} mb={8}>
               Cash Balance
             </Text>
-            <Text ff="Albert Sans" fw={900} size="40px" c="var(--color-text-primary)" className="num"
+            <Text ff="Albert Sans" fw={900} size="44px" c="var(--color-text-primary)" className="num"
               style={{ lineHeight: 1, letterSpacing: '-1.5px' }} mb={6}>
               ₹12.45L
             </Text>
-            <Text ff="Space Grotesk" fw={500} size="13px" c="var(--color-text-secondary)" mb={14}>
+            <Text ff="Space Grotesk" fw={400} size="12px" c="var(--color-text-muted)" mb={14}>
               Across 2 accounts
             </Text>
-            <Box style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0',
-              padding: '6px 10px', borderRadius: 8,
-            }}>
-              <IconArrowNarrowUp size={14} color="#10b981" strokeWidth={2.5} />
-              <Text ff="Space Grotesk" fw={700} size="12px" c="#10b981">
-                {isCurrentPeriod ? '₹45K today' : '8.5% vs last month'}
-              </Text>
-            </Box>
+            {isCurrentPeriod ? (
+              <Box style={{
+                display: 'grid', gridTemplateColumns: '1fr 1fr auto',
+                border: '1px solid rgba(16,185,129,0.25)',
+                borderRadius: 8, overflow: 'hidden',
+                backgroundColor: 'rgba(255,255,255,0.55)',
+              }}>
+                {[
+                  { heading: 'TODAY',     value: '₹12.45L', muted: false },
+                  { heading: 'YESTERDAY', value: '₹12.0L',  muted: true  },
+                ].map(({ heading, value, muted }, i) => (
+                  <Box key={heading} style={{ padding: '7px 10px', borderRight: '1px solid rgba(16,185,129,0.2)' }}>
+                    <Text ff="Space Grotesk" size="9px" fw={700} c="#6B9E8A"
+                      style={{ textTransform: 'uppercase', letterSpacing: '0.6px', lineHeight: 1, marginBottom: 3 }}>
+                      {heading}
+                    </Text>
+                    <Text ff="Albert Sans" fw={700} size="13px" className="num"
+                      c={muted ? '#6B7280' : '#0F1117'} style={{ lineHeight: 1 }}>
+                      {value}
+                    </Text>
+                  </Box>
+                ))}
+                <Box style={{ padding: '7px 10px', display: 'flex', alignItems: 'center' }}>
+                  <Box style={{ display: 'inline-flex', padding: '3px 7px', borderRadius: 4, backgroundColor: 'rgba(16,185,129,0.12)' }}>
+                    <Text ff="Space Grotesk" fw={600} size="11px" c="#10b981">↑ ₹45K</Text>
+                  </Box>
+                </Box>
+              </Box>
+            ) : (
+              <Box style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                backgroundColor: 'rgba(16,185,129,0.10)',
+                padding: '6px 12px', borderRadius: 999,
+              }}>
+                <Text ff="Space Grotesk" fw={600} size="12px" c="#10b981">↑ 8.5% vs last month</Text>
+              </Box>
+            )}
           </Box>
 
-          {/* Body zone — flex: 1 fills remaining height */}
-          <Box style={{ flex: 1, padding: '14px 24px 0', backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
-            <Text ff="Space Grotesk" fw={600} size="10px" c="var(--color-text-ghost)"
-              style={{ textTransform: 'uppercase', letterSpacing: '0.8px' }} mb={10}>
+          {/* Body zone — account breakdown */}
+          <Box style={{ flex: 1, padding: '18px 24px 10px', backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
+            <Text ff="Space Grotesk" fw={600} size="11px" c="var(--color-text-ghost)"
+              style={{ textTransform: 'uppercase', letterSpacing: '0.8px' }} mb={4}>
               Account Breakdown
             </Text>
             {[
@@ -351,8 +435,8 @@ export const OverviewTab = () => {
             ].map((acc, i) => (
               <Box key={acc.label} style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '11px 0',
-                borderBottom: i === 0 ? '1px solid #f3f4f6' : 'none',
+                padding: '14px 0',
+                borderBottom: i === 0 ? '1px solid #f1f5f9' : 'none',
               }}>
                 <Text ff="Space Grotesk" fw={500} size="13px" c="var(--color-text-primary)">{acc.label}</Text>
                 <Text ff="Albert Sans" fw={800} size="17px" c="var(--color-text-primary)" className="num"
@@ -456,6 +540,12 @@ export const OverviewTab = () => {
                     strokeWidth={entry.type === 'end' ? 2 : 0}
                   />
                 ))}
+                <LabelList
+                  dataKey="value"
+                  position="top"
+                  formatter={(v: any) => `₹${v}L`}
+                  style={{ fontSize: 11, fontFamily: 'Albert Sans', fontWeight: 700, fill: '#374151' }}
+                />
               </Bar>
             </ComposedChart>
           </ResponsiveContainer>
@@ -517,17 +607,38 @@ export const OverviewTab = () => {
             </RechartsAreaChart>
           </ResponsiveContainer>
 
-          {/* Legend */}
-          <Group gap={16} mt={8}>
-            {[
-              { label: 'Inflow',  color: '#2563EB' },
-              { label: 'Outflow', color: '#94A3B8' },
-            ].map(({ label, color }) => (
-              <Group key={label} gap={5} align="center">
-                <Box style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: color }} />
-                <Text ff="Space Grotesk" size="11px" c="var(--color-text-muted)">{label}</Text>
+          {/* Legend + today vs yesterday */}
+          <Group justify="space-between" align="center" mt={8}>
+            <Group gap={16}>
+              {[
+                { label: 'Inflow',  color: '#2563EB' },
+                { label: 'Outflow', color: '#94A3B8' },
+              ].map(({ label, color }) => (
+                <Group key={label} gap={5} align="center">
+                  <Box style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: color }} />
+                  <Text ff="Space Grotesk" size="11px" c="var(--color-text-muted)">{label}</Text>
+                </Group>
+              ))}
+            </Group>
+            {isCurrentPeriod && (
+              <Group gap={0} style={{ border: '1px solid var(--color-border)', borderRadius: 8, overflow: 'hidden', backgroundColor: 'var(--color-bg-hover)' }}>
+                {[
+                  { heading: 'TODAY NET',     value: '+₹12K', muted: false, positive: true  },
+                  { heading: 'YESTERDAY NET', value: '+₹8K',  muted: true,  positive: true  },
+                ].map(({ heading, value, muted }, i) => (
+                  <Box key={heading} style={{ padding: '5px 10px', borderRight: i === 0 ? '1px solid var(--color-border)' : 'none' }}>
+                    <Text ff="Space Grotesk" size="9px" fw={700} c="var(--color-text-ghost)"
+                      style={{ textTransform: 'uppercase', letterSpacing: '0.5px', lineHeight: 1, marginBottom: 2 }}>
+                      {heading}
+                    </Text>
+                    <Text ff="Albert Sans" fw={700} size="12px" className="num"
+                      c={muted ? 'var(--color-text-muted)' : 'var(--color-positive)'} style={{ lineHeight: 1 }}>
+                      {value}
+                    </Text>
+                  </Box>
+                ))}
               </Group>
-            ))}
+            )}
           </Group>
         </WidgetCard>
 
