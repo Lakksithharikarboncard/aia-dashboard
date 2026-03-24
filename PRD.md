@@ -1,528 +1,443 @@
 # AIA Financial Dashboard — Product Requirements Document
 
-**Version:** 1.0  
-**Last Updated:** March 23, 2026  
-**Status:** Complete
+**Version:** 1.0
+**Date:** 2026-03-24
+**Status:** Final
 
 ---
 
-## Problem Statement & Overview
+## 1. Product Overview
 
-### What is broken or missing today
-- Finance teams lack real-time visibility into cash position, receivables health, and payables obligations in a single view
-- Existing ERP reports require manual consolidation across 5+ screens to understand working capital status
-- No proactive alerts for collection risks or payment concentration exposures
-- DSO/DPO tracking requires manual calculation and spreadsheet maintenance
+AIA Financial Dashboard is a single-page web application that gives accountants and business owners a real-time view of their company's financial health. The dashboard aggregates data from accounting systems (QuickBooks, Tally, etc.) and presents it as interactive KPI cards, charts, and an AI-generated insights layer.
 
-### What we are building
-A three-tab financial dashboard providing real-time visibility into cash position, profitability trends, accounts receivable aging, and accounts payable obligations with AI-generated insights for collection and payment prioritization.
+### 1.1 Goals
+- Surface the most critical financial metrics at a glance without requiring the user to run reports
+- Enable drill-down from summary KPIs to invoice/bill-level detail via a side panel
+- Provide AI-generated commentary that contextualises trends and flags anomalies
+- Support multi-period analysis via a global date range picker
 
-### Why now
-- 34% increase in overdue receivables month-over-month indicates collections slippage requiring immediate attention
-- Single customer (Acme Corp) driving 31% of DSO creates working capital concentration risk
-- Operating margin improved 5.2pp — leadership needs visibility into sustainability drivers
-
-### What high-level success looks like
-- CFO reviews dashboard daily (not weekly) for cash position decisions
-- Collections team prioritizes outreach using Top Customers — Overdue AR ranking
-- Finance reduces monthly close analysis time from 4 hours to 30 minutes
-- DSO reduces from 45 days to 40 days target within 90 days of deployment
+### 1.2 Non-Goals
+- This dashboard does not allow editing transactions
+- It does not replace the accounting system; it is read-only
+- It does not support mobile or tablet breakpoints in v1
 
 ---
 
-## Goals & Non-Goals
+## 2. User Personas
 
-### Goals
-| # | Goal | Measurement |
-|---|------|-------------|
-| 1 | Reduce time to identify overdue receivables | From 45 minutes (manual report) to < 2 minutes (dashboard) |
-| 2 | Improve DSO visibility | DSO metric visible on Overview tab, updated within 5 minutes of invoice aging |
-| 3 | Enable payment prioritization | Upcoming Payments shows 100% of bills due in next 15 days, updated daily |
-| 4 | Surface collection risks | AI Insights displays top 3 customers by overdue amount within 24 hours of threshold breach |
-| 5 | Provide cash flow forecasting | Weekly cash inflow/outflow breakdown shows 4-week trend with net flow calculation |
-
-### Non-Goals
-| # | Non-Goal | Rationale |
-|---|----------|-----------|
-| 1 | Invoice creation or payment processing | Transactional workflows handled by ERP, not dashboard |
-| 2 | Multi-company consolidation | Single entity (Acme Corp) scope for v1 |
-| 3 | Custom date range selection | Fixed periods (This Month, Last Month) only for v1 |
-| 4 | Export to PDF/Excel | Screen viewing only; export in v2 |
-| 5 | User role-based permissions | Single admin user (CFO/Finance Manager) for v1 |
-| 6 | Mobile responsive layout | Desktop-only (1440px minimum width) for v1 |
+| Persona | Role | Primary Goal |
+|---|---|---|
+| Priya | Senior Accountant | Monitor DSO/DPO, identify overdue invoices, prepare month-end reports |
+| Rahul | CFO / Business Owner | Track cash position, gross margin, revenue trends at a weekly glance |
+| Sneha | Accounts Payable Manager | Manage vendor bills, spot AP aging issues, ensure timely payments |
 
 ---
 
-## User Personas
+## 3. Information Architecture
 
-### Persona 1: CFO / Finance Director
-
-| Attribute | Description |
-|-----------|-------------|
-| **Role** | Executive responsible for cash flow management, financial planning, board reporting |
-| **Goal** | Understand cash position, working capital health, and profitability trends in < 5 minutes daily |
-| **Frustration** | Current ERP requires running 6+ reports (AR Aging, AP Aging, Cash Summary, P&L, DSO calc, Revenue Trend) and consolidating in Excel |
-| **Technical comfort** | High — uses Excel daily, comfortable with filters and pivot tables, expects drill-down capability |
-
-**Primary tasks:**
-- Review total cash balance and account breakdown each morning
-- Monitor DSO trend and identify customers driving delays
-- Approve payment priorities based on Upcoming Payments view
-- Share Operating Margin trend with CEO weekly
-
----
-
-### Persona 2: Collections Manager
-
-| Attribute | Description |
-|-----------|-------------|
-| **Role** | Responsible for accounts receivable collections, customer payment follow-up |
-| **Goal** | Prioritize collection calls based on overdue amount and aging bucket |
-| **Frustration** | No ranked list of customers by overdue amount; must manually sort AR Aging report |
-| **Technical comfort** | Medium — uses email and phone primarily, needs simple click-to-drill interface |
-
-**Primary tasks:**
-- View Top Customers — Overdue AR to prioritize call list
-- Click customer name to see all open invoices with due dates
-- Identify invoices in 61–90 day bucket approaching write-off risk
-- Track collection progress week-over-week
-
----
-
-### Persona 3: Accounts Payable Clerk
-
-| Attribute | Description |
-|-----------|-------------|
-| **Role** | Processes vendor payments, maintains AP aging, manages bill entry |
-| **Goal** | Ensure timely payment of bills while optimizing cash flow timing |
-| **Frustration** | Must cross-reference vendor statements with AP Aging; no visibility into payment concentration risk |
-| **Technical comfort** | Medium-High — uses accounting software daily, comfortable with table views and filters |
-
-**Primary tasks:**
-- Review Upcoming Payments to schedule payments in 0–7 day and 8–15 day buckets
-- Identify overdue bills requiring immediate attention
-- Monitor Vendor Spend Concentration to flag single-vendor dependency
-- Verify DPO remains within 30–45 day target range
-
----
-
-## UX & Interaction Architecture
-
-### User Flow per Persona
-
-#### CFO Flow (Overview Tab → Detail Panel)
-```
-1. Land on Overview tab (default)
-2. Scan Zone A: Cash Balance (₹12.45L), Gross Profit (₹18.5L, 41%)
-3. Read AI Insights strip — expand "Overdue receivables up 34%" insight
-4. Click Revenue vs Expense chart → Side panel opens (right, 420px)
-5. Review Monthly Breakdown table → Close panel (X or Escape)
-6. Navigate to Payables & Receivables tab
-7. Review DSO (45 days) → Click DSO card
-8. Review Customer Contribution table → Note Acme Corp at 14 days (31%)
-9. Close panel → Return to Overview tab
-```
-
-#### Collections Manager Flow (Payables & Receivables Tab)
-```
-1. Navigate to Payables & Receivables tab
-2. Review AR Outstanding card (₹18.5L total, ₹4.2L overdue, 8 invoices)
-3. Click Top Customers — Overdue AR card
-4. View rankings: Acme Corp (₹2.1L, 50%), Soylent Corp (₹1.2L, 28.6%)
-5. Click "Acme Corp" row → Bottom section updates to show invoices
-6. Note INV-2241 (₹2.1L, 30d overdue) and INV-2089 (₹65K, 68d overdue)
-7. Close panel → Add Acme Corp to call list
-```
-
-#### AP Clerk Flow (Cash Tab → Payables Tab)
-```
-1. Navigate to Cash tab
-2. Review Upcoming Payments: Overdue (₹3.45L, 12 bills), 0–7 days (₹1.8L, 5 bills)
-3. Click Upcoming Payments card
-4. Review Overdue section → Note Vendor X #BL-441 (₹1.4L, 14d overdue)
-5. Review 0–7 days section → Schedule payments for Vendor A, B, C
-6. Navigate to Payables & Receivables tab
-7. Review DPO (38 days) → Within target range (30–45 days)
-8. Click Vendor Spend Concentration → Note Vendor X at 42.3% (high concentration)
-```
-
----
-
-### All States per Component
-
-#### Widget Card
-| State | Visual | Trigger |
-|-------|--------|---------|
-| Success | Full data rendered, white background, 1px border | Data loaded < 500ms |
-| Loading | Skeleton placeholder (grey bars pulsing) | Data fetch in progress |
-| Empty | "No data available" message, centered | Zero records for period |
-| Error | "Failed to load" message with Retry button | API error or timeout > 5s |
-| Hover | translateY(-2px), shadow 0 4px 12px rgba(0,0,0,0.08) | Mouse enter |
-
-#### Side Panel
-| State | Visual | Trigger |
-|-------|--------|---------|
-| Closed | Translated 100% off-screen right | Default, Escape key, X click |
-| Opening | Slide-in animation, 200ms ease-out | Widget card click |
-| Open | Fixed at right: 0, 420px width | Animation complete |
-| Loading | Skeleton rows inside panel body | Panel data fetch |
-| Error | "Failed to load details" with Retry | API error |
-
-#### AI Insights Accordion
-| State | Visual | Trigger |
-|-------|--------|---------|
-| Collapsed | Single row (48px height), chevron rotated 0° | Default |
-| Expanded | Full content visible, chevron rotated 180° | Chevron click |
-| Transitioning | 150ms ease animation | State change |
-| Empty | "No insights available" | Zero insights generated |
-
-#### Data Tables
-| State | Visual | Trigger |
-|-------|--------|---------|
-| Success | Rows with data, 1px divider, hover background | Data loaded |
-| Empty | "No records found" centered, 40px padding | Zero rows |
-| Loading | 5 skeleton rows (grey bars) | Data fetch |
-| Error | "Failed to load table" with Retry | API error |
-| Row Selected | Background #F9FAFB, font-weight 600 | Click row |
-
----
-
-### Navigation Logic
-
-| Trigger | From | To | Transition |
-|---------|------|-----|------------|
-| Click "Overview" nav | Any tab | Overview tab | Instant (no animation) |
-| Click "Cash" nav | Any tab | Cash tab | Instant |
-| Click "Payables & Receivables" nav | Any tab | Payables & Receivables tab | Instant |
-| Click widget card | Any tab | Side panel opens | Slide-in 200ms |
-| Click panel X button | Panel open | Panel closed | Slide-out 200ms |
-| Press Escape | Panel open | Panel closed | Slide-out 200ms |
-| Click outside panel | Panel open | Panel closed | Slide-out 200ms |
-| Click AI Insights chevron | Collapsed row | Expanded row | 150ms height animation |
-| Click Grain toggle | Any grain | Selected grain | Chart re-renders < 100ms |
-
----
-
-### Wireframes
-
-**Overview Tab Layout:**
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  AIA  Acme Corp    Overview  Cash  Payables    [This Month ▼]  │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌──────────────┐  ┌──────────────┐                            │
-│  │ Cash Balance │  │ Gross Profit │  (Zone A Row 1: 6col each) │
-│  │   ₹12.45L    │  │   ₹18.5L 41% │                            │
-│  └──────────────┘  └──────────────┘                            │
-│                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │              AI Insights Accordion (12col)               │  │
-│  │  🔴 Overdue receivables up 34%...             [▼]        │  │
-│  │  🟡 DSO increased 12%...                      [▼]        │  │
-│  │  🟢 Operating margin improved...              [▼]        │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │           Revenue vs Expense Chart (12col)               │  │
-│  │   [Bar chart: Revenue, Expense | Line: Net Surplus]      │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │           Expense Breakdown (12col)                      │  │
-│  │   [5 category cards with progress bars]                  │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                                                                 │
-│  ┌──────────────┐  ┌──────────────┐                            │
-│  │ P&L Statement│  │Revenue Trend │  (Zone B Row 3: 6col each) │
-│  └──────────────┘  └──────────────┘                            │
-│                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │           Top Customers by Revenue (12col)               │  │
-│  │   [4 customer cards with progress bars]                  │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Side Panel Layout:**
-```
-┌─────────────────────────────┐
-│ Revenue vs Expense    [X]   │ ← Header (sticky)
-│ This Month                  │
-├─────────────────────────────┤
-│ SUMMARY                     │
-│ ┌──────┐ ┌──────┐ ┌──────┐ │
-│ │Rev   │ │Exp   │ │Net   │ │
-│ │₹45L  │ │₹33L  │ │₹12L  │ │
-│ └──────┘ └──────┘ └──────┘ │
-├─────────────────────────────┤
-│ MONTHLY BREAKDOWN           │
-│ Month  │ Rev  │ Exp │ Net  │
-│ Jan    │ ₹30L │ ₹25L│ ₹5L  │
-│ Feb    │ ₹31L │ ₹26L│ ₹5.5L│
-│ ...                         │
-├─────────────────────────────┤
-│ EXPENSE BY CATEGORY         │
-│ Category│ Amount│ %        │
-│ COGS    │ ₹26.5L│ 80%      │
-│ ...                         │
-└─────────────────────────────┘
-```
-
----
-
-## Functional Requirements
-
-### Must Have
-
-| ID | Requirement |
-|----|-------------|
-| FR-1 | System shall display total cash balance aggregated from all bank accounts on Overview tab |
-| FR-2 | System shall display DSO (Days Sales Outstanding) calculated as (AR / Revenue) × Days in period |
-| FR-3 | System shall display DPO (Days Payable Outstanding) calculated as (AP / COGS) × Days in period |
-| FR-4 | System shall display Revenue vs Expense trend for 6 monthly periods with Net Surplus line |
-| FR-5 | System shall display Expense Breakdown by category with percentage of total |
-| FR-6 | System shall display Upcoming Payments in 3 buckets: Overdue, 0–7 days, 8–15 days |
-| FR-7 | System shall display AR Aging in 5 buckets: Current, 1–30 days, 31–60 days, 61–90 days, 90+ days |
-| FR-8 | System shall display AP Aging in 5 buckets: Current, 1–30 days, 31–60 days, 61–90 days, 90+ days |
-| FR-9 | System shall display Top Customers by Revenue with share percentage and trend |
-| FR-10 | System shall display Top Customers — Overdue AR ranked by overdue amount |
-| FR-11 | System shall display Vendor Spend Concentration with percentage of total spend |
-| FR-12 | System shall open side panel on widget card click with detailed breakdown |
-| FR-13 | System shall close side panel on X button click, Escape key, or click outside panel |
-| FR-14 | System shall expand/collapse AI Insights rows on chevron click |
-| FR-15 | System shall display AI Insights with severity levels: Critical, Watch, Positive |
-| FR-16 | System shall format currency values: < ₹1L as full number, ₹1L–₹99L as XL.L, ≥₹1Cr as X.XCr |
-| FR-17 | System shall display trend deltas with 1 decimal place (e.g., 8.5%) |
-| FR-18 | System shall display positive deltas in green (#16A34A), negative in red (#DC2626) |
-| FR-19 | System shall update all data within 5 minutes of source system change |
-| FR-20 | System shall load initial dashboard view in < 2 seconds on broadband (10 Mbps) |
-
-### Nice to Have
-
-| ID | Requirement |
-|----|-------------|
-| FR-N1 | System shall allow export of panel tables to CSV |
-| FR-N2 | System shall allow custom date range selection beyond preset periods |
-| FR-N3 | System shall display tooltip on chart hover with exact values |
-| FR-N4 | System shall highlight row on table hover with background #F9FAFB |
-
-### Out of Scope
-
-| ID | Requirement |
-|----|-------------|
-| FR-O1 | System shall not support invoice creation or payment processing |
-| FR-O2 | System shall not support multi-company consolidation |
-| FR-O3 | System shall not support mobile screen sizes < 1024px width |
-| FR-O4 | System shall not support user role-based permissions |
-| FR-O5 | System shall not support PDF export |
-
----
-
-## Acceptance Criteria
-
-### FR-1: Cash Balance Display
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-1.1 | User opens Overview tab | System loads | Cash Balance card shows total across all accounts (₹12.45L) |
-| AC-1.2 | User clicks Cash Balance card | Panel opens | Panel shows account-wise breakdown (HDFC: ₹8.2L, SBI: ₹4.25L) |
-| AC-1.3 | Bank balance changes in source | 5 minutes elapse | Dashboard reflects updated balance |
-
-### FR-2: DSO Display
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-2.1 | User opens Payables & Receivables tab | System loads | DSO card shows 45 days |
-| AC-2.2 | DSO > target (40 days) | System loads | Red badge shows "X days above target" |
-| AC-2.3 | User clicks DSO card | Panel opens | Panel shows Customer Contribution table with Acme Corp at 14 days (31%) |
-
-### FR-3: DPO Display
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-3.1 | User opens Payables & Receivables tab | System loads | DPO card shows 38 days |
-| AC-3.2 | DPO within target range (30–45 days) | System loads | Green badge shows "Within target range" |
-| AC-3.3 | User clicks DPO card | Panel opens | Panel shows Vendor Contribution table |
-
-### FR-4: Revenue vs Expense Chart
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-4.1 | User views Overview tab | System loads | Chart shows 6 months (Jan–Jun) with Revenue bars (blue), Expense bars (grey), Net Surplus line (blue) |
-| AC-4.2 | User hovers on Revenue bar | Mouse over bar | Tooltip shows exact revenue value for that month |
-| AC-4.3 | User clicks chart | Panel opens | Panel shows Monthly Breakdown table with Revenue, Expense, Net Surplus, Margin columns |
-| AC-4.4 | Net Surplus data missing | System loads | Chart displays "No data available" message |
-
-### FR-5: Expense Breakdown
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-5.1 | User views Overview tab | System loads | 5 category cards displayed: COGS (80%), Salaries (10%), Rent (4%), Marketing (3%), Other (3%) |
-| AC-5.2 | User clicks Expense Breakdown | Panel opens | Panel shows category table with vs Last Month column |
-| AC-5.3 | User clicks COGS row | Row selected | Panel shows COGS Detail section with Purchase Accounts (₹22L, 83%), Direct Expenses (₹4.5L, 17%) |
-| AC-5.4 | User clicks Salaries row | Row selected | Panel shows "No sub-ledger detail available for this category." |
-
-### FR-6: Upcoming Payments
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-6.1 | User views Cash tab | System loads | 3 buckets displayed: Overdue (₹3.45L, 12 bills), 0–7 days (₹1.8L, 5 bills), 8–15 days (₹4.2L, 8 bills) |
-| AC-6.2 | User clicks Upcoming Payments | Panel opens | Panel shows 3 sections with vendor/bill tables for each bucket |
-| AC-6.3 | No bills in 0–7 days bucket | System loads | Section shows "No bills due in this period" |
-
-### FR-7: AR Aging
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-7.1 | User views Payables & Receivables tab | System loads | AR Aging card shows bucket summary table |
-| AC-7.2 | User clicks AR Aging | Panel opens | Panel shows Bucket Summary and All Overdue Invoices tables |
-| AC-7.3 | Invoice moves from 31–60 to 61–90 bucket | Next day | AR Aging reflects updated bucket |
-
-### FR-8: AP Aging
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-8.1 | User views Payables & Receivables tab | System loads | AP Aging card shows bucket summary table |
-| AC-8.2 | User clicks AP Aging | Panel opens | Panel shows Bucket Summary and All Overdue Bills tables |
-
-### FR-9: Top Customers by Revenue
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-9.1 | User views Overview tab | System loads | 4 customer cards displayed: Acme Corp (₹12L, 26.7%), Globex Inc (₹8.5L, 18.9%), Soylent Corp (₹4.2L, 9.3%), Initech (₹1.8L, 4.0%) |
-| AC-9.2 | User clicks Top Customers | Panel opens | Panel shows Rankings table and Open Invoices for selected customer |
-| AC-9.3 | User clicks "Globex Inc" row | Row selected | Open Invoices section updates to show Globex Inc invoices |
-
-### FR-10: Top Customers — Overdue AR
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-10.1 | User views Payables & Receivables tab | System loads | Table shows Acme Corp (₹2.1L, 50%), Soylent Corp (₹1.2L, 28.6%), Globex Inc (₹90K, 21.4%) |
-| AC-10.2 | User clicks "Acme Corp" row | Row selected | Bottom section shows Acme Corp invoices: INV-2241 (30d), INV-2089 (68d) |
-| AC-10.3 | No overdue AR | System loads | Section shows "No overdue invoices" |
-
-### FR-11: Vendor Spend Concentration
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-11.1 | User views Payables & Receivables tab | System loads | Table shows Vendor X (42.3%), Supplier Y (26.5%), Agency Z (15.9%), Others (15.3%) |
-| AC-11.2 | Single vendor > 40% share | System loads | Amber warning text: "Vendor X accounts for 42.3% of total billed spend this month." |
-| AC-11.3 | User clicks "Vendor X" row | Row selected | Bottom section shows Vendor X bills: BL-441, BL-519 |
-
-### FR-12: Side Panel Open
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-12.1 | User clicks any widget card | Click registered | Side panel slides in from right (200ms animation) |
-| AC-12.2 | Panel opens | Animation complete | Panel title shows widget display name (not widget ID) |
-| AC-12.3 | Panel data loading | Panel opens | Panel shows skeleton rows |
-| AC-12.4 | Panel data fails to load | API error > 5s | Panel shows "Failed to load details" with Retry button |
-
-### FR-13: Side Panel Close
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-13.1 | Panel is open | User clicks X button | Panel slides out (200ms animation) |
-| AC-13.2 | Panel is open | User presses Escape | Panel slides out (200ms animation) |
-| AC-13.3 | Panel is open | User clicks outside panel | Panel slides out (200ms animation) |
-
-### FR-14: AI Insights Accordion
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-14.1 | User views Overview tab | System loads | 3 insights displayed: 1 Critical, 1 Watch, 1 Positive |
-| AC-14.2 | User clicks chevron on insight | Click registered | Insight expands, chevron rotates 180° (150ms) |
-| AC-14.3 | One insight expanded | User clicks different insight | First insight collapses, second expands |
-| AC-14.4 | No insights available | System loads | Section shows "No insights available at this time" |
-
-### FR-15: AI Insights Severity
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-15.1 | Insight severity is Critical | System loads | Red dot, red left border on expanded content |
-| AC-15.2 | Insight severity is Watch | System loads | Amber dot, amber left border on expanded content |
-| AC-15.3 | Insight severity is Positive | System loads | Green dot, green left border on expanded content |
-| AC-15.4 | User expands insight | Expanded view | 4 sections visible: WHAT WE FOUND, WHY IT MATTERS, SUGGESTED REVIEW, BASED ON |
-
-### FR-16: Currency Formatting
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-16.1 | Value is ₹85,000 | Displayed | Shows "₹85,000" (full number with commas) |
-| AC-16.2 | Value is ₹18,50,000 | Displayed | Shows "₹18.5L" (L shorthand) |
-| AC-16.3 | Value is ₹1,20,00,000 | Displayed | Shows "₹1.2Cr" (Cr shorthand) |
-| AC-16.4 | Chart Y-axis label | Displayed | Shows "₹30L", "₹35L" (never raw integers) |
-
-### FR-17: Delta Formatting
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-17.1 | Delta is 8.5% | Displayed | Shows "8.5%" (1 decimal place) |
-| AC-17.2 | Delta is 7.0% | Displayed | Shows "7.0%" (1 decimal place, not "7%") |
-| AC-17.3 | Delta is positive | Displayed | Shows green color (#16A34A) with ↑ arrow |
-| AC-17.4 | Delta is negative | Displayed | Shows red color (#DC2626) with ↓ arrow |
-
-### FR-18: Trend Badge Colors
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-18.1 | Revenue increased | Displayed | Green badge with ↑ and percentage |
-| AC-18.2 | DSO increased | Displayed | Red badge with ↑ and percentage (higher DSO is bad) |
-| AC-18.3 | Cash Balance increased | Displayed | Green badge with ↑ and percentage |
-| AC-18.4 | Expense increased | Displayed | Red badge with ↑ and percentage (higher expense is bad) |
-
-### FR-19: Data Freshness
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-19.1 | Invoice posted in ERP | 5 minutes elapse | Dashboard AR Outstanding reflects new invoice |
-| AC-19.2 | Payment received | 5 minutes elapse | Dashboard Cash Balance and AR Outstanding updated |
-| AC-19.3 | Bill entered in AP | 5 minutes elapse | Dashboard AP Outstanding reflects new bill |
-
-### FR-20: Load Performance
-| AC-ID | Given | When | Then |
-|-------|-------|------|------|
-| AC-20.1 | User opens dashboard | Broadband connection (10 Mbps) | Initial view renders in < 2 seconds |
-| AC-20.2 | User clicks widget card | Broadband connection | Panel opens in < 500ms |
-| AC-20.3 | User switches tabs | Broadband connection | Tab content renders in < 500ms |
-
----
-
-## Technical Architecture
-
-### Stack
-| Layer | Technology |
-|-------|------------|
-| Framework | React 18 |
-| Language | TypeScript 5 |
-| UI Library | Mantine 7 |
-| Charts | Recharts (via @mantine/charts) |
-| Build | Vite |
-| Styling | CSS Variables + Mantine styles |
-
-### Component Hierarchy
 ```
 App
-├── DashboardProvider (Context)
-└── DashboardLayout
-    ├── Header (Nav tabs, Date selector)
-    └── Main Content
-        ├── OverviewTab
-        │   ├── KPIGrid
-        │   │   └── WidgetCard (×7)
-        │   │       ├── Cash Balance
-        │   │       ├── Gross Profit
-        │   │       ├── Revenue vs Expense
-        │   │       ├── Expense Breakdown
-        │   │       ├── P&L Statement
-        │   │       ├── Revenue Trend
-        │   │       └── Top Customers
-        │   └── AIInsightsAccordion
-        ├── CashTab
-        │   ├── KPIGrid
-        │   │   └── WidgetCard (×3)
-        │   └── UpcomingPayments
-        └── PayablesTab
-            ├── KPIGrid
-            │   └── WidgetCard (×8)
-            └── SidePanel
+├── Header (global shell)
+│   ├── Wordmark: "AIA / Accountant"
+│   ├── Org selector: "Acme Corp" (static in v1)
+│   ├── Nav tabs: Overview | Payables & Receivables
+│   └── Date range picker: From [date] — To [date]
+├── Overview Tab
+│   ├── Row 1: Gross Profit (3col) | Cash Balance (3col) | Revenue vs Expense (6col)
+│   ├── Row 2: P&L Summary (3col) | Cash Inflow vs Outflow (6col) | Expense Breakdown (3col)
+│   ├── Row 3: AI Insights (12col, non-clickable)
+│   └── Row 4: Revenue Trend (5col) | Top Customers by Revenue (4col) | Upcoming Payments (3col)
+├── Payables & Receivables Tab
+│   ├── Row 1: AR Outstanding (3col) | DSO (3col) | AP Outstanding (3col) | DPO (3col)
+│   ├── Row 2: AR Aging (6col) | AP Aging (6col)
+│   └── Row 3: Vendor Spend Concentration (12col)
+└── Side Panel (global overlay, 420px, right-anchored)
+    └── Per-widget detail views
 ```
 
-### Data Flow
-```
-ERP System (Source)
-    ↓ (API, 5-min sync)
-DashboardContext (State)
-    ↓ (Props)
-Widget Components
-    ↓ (Click)
-SidePanel (Detail view)
-```
+---
 
-### Design Tokens (CSS Variables)
-```css
+## 4. Global Shell
+
+### 4.1 Header
+
+- **Height:** 56px
+- **Background:** White (#FFFFFF)
+- **Border-bottom:** 1px solid #E5E7EB
+- **z-index:** 200 (above main content, below modals)
+- **Layout:** Horizontal flex, space-between, no wrap
+
+#### 4.1.1 Left Group (brand → org → nav)
+
+**Wordmark block**
+- Primary text: "AIA" — Albert Sans 800, 18px, #0F1117, letter-spacing -0.04em
+- Secondary text: "Accountant" — Space Grotesk 600, 10px, #9CA3AF, uppercase, letter-spacing 0.1em
+- Right padding: 20px
+
+**Org selector (static v1)**
+- Avatar: 24×24px square, #2563EB fill, border-radius 4px, white "A" text (Space Grotesk 600, 12px)
+- Name: "Acme Corp" — Space Grotesk 500, 13px, #374151
+- Left/right padding: 16px; right border: 1px solid #E5E7EB; full header height
+
+**Nav tabs**
+- Items: "Overview" (IconLayoutDashboard), "Payables & Receivables" (IconReceipt2)
+- Tab height: full header height (56px)
+- Inactive: Space Grotesk 500, 13px, #6B7280, icon 16px stroke 2
+- Active: Space Grotesk 600, 13px, #0F1117
+- Active indicator: 2px solid #2563EB strip at bottom edge (border-radius 2px 2px 0 0), spans full tab width
+- Hover: color transitions to active state (0.15s ease)
+- Click: switches active tab, closes side panel if open
+
+#### 4.1.2 Right Group (date range picker)
+
+- Container: flex row, gap 6px, bg #F9FAFB, border 1px #E5E7EB, border-radius 8px, padding 0 10px, height 34px
+- Two native `<input type="date">` elements, Space Grotesk 500, 12px, #0F1117
+- Separator: 1px wide × 14px tall, color #E5E7EB
+- First input: `max` attribute set to current `to` value
+- Second input: `min` attribute set to current `from` value
+- Default range: 2026-03-01 → 2026-03-23
+- Change: updates global date context; all widgets re-render (in v1: updates date labels only, no actual data filtering)
+
+---
+
+## 5. Overview Tab
+
+### 5.1 Row 1
+
+#### 5.1.1 Gross Profit (w7-gross-profit) — colSpan 3
+
+**Display**
+- KPI value: ₹18.5L — Albert Sans 700, 32px, #0F1117
+- Sub-label: "41% gross margin" — Space Grotesk 12px, #6B7280
+- Trend badge: +2.1% vs last month (positive, green)
+- Divider: 1px #E5E7EB, margin 8px 0
+- COGS line: "COGS: ₹26.5L" — Space Grotesk 12px, #6B7280
+
+**Panel content**
+- Header: "Gross Profit" + date range subtitle
+- Gross Profit breakdown (Revenue ₹45L − COGS ₹26.5L = ₹18.5L)
+- Margin trend chart (monthly %, last 6 months)
+- COGS composition table (materials, labour, other)
+
+#### 5.1.2 Cash Balance (w10-cash-full) — colSpan 3
+
+**Display**
+- KPI value: ₹12.45L — Albert Sans 700, 32px, #0F1117
+- Sub-label: "Across 2 accounts" — Space Grotesk 12px, #6B7280
+- Account rows:
+  - HDFC Current A/c · ₹8.2L
+  - SBI Savings A/c · ₹4.25L
+  - Each row: account name left, amount right; Space Grotesk 12px; Albert Sans 600 for amount
+- Trend badge: +5.2% vs last month (positive, green)
+
+**Panel content**
+- Total with account breakdown
+- 30-day cash balance area chart
+- Transaction-level inflow/outflow summary
+
+#### 5.1.3 Revenue vs Expense (w10-rev-vs-exp) — colSpan 6
+
+**Display**
+- ComposedChart (Recharts): Bar (Revenue, #2563EB) + Bar (Expense, #E5E7EB) + Line (Net, #16A34A)
+- X-axis: month labels (Oct–Mar), Space Grotesk 10px, #9CA3AF
+- Y-axis: ₹L notation, Space Grotesk 10px, #9CA3AF
+- Chart height: 160px
+- Legend: Revenue ● Expense ● Net Income, Space Grotesk 11px
+- Latest data point: Revenue ₹45L, Expense ₹33L, Net ₹12L
+
+**Panel content**
+- Full-size chart with 12-month history
+- Monthly table: Revenue | COGS | Gross Profit | OpEx | Net Income
+- YoY comparison
+
+---
+
+### 5.2 Row 2
+
+#### 5.2.1 P&L Summary (w2-pnl-compressed) — colSpan 3
+
+**Display**
+- Layout: full card height, rows distributed space-between
+- Rows (label left, value right):
+  - Revenue — ₹45L
+  - COGS — ₹26.5L
+  - **Gross Profit — ₹18.5L** (bold, positive green)
+  - Operating Expense — ₹6.5L
+  - **Operating Profit — ₹12L** (bold, positive green)
+- Font: Space Grotesk 13px for labels, Albert Sans 600 for values
+
+**Panel content**
+- Full P&L statement with additional line items (depreciation, interest, tax, net profit)
+- Sparkline trend for each major line item
+
+#### 5.2.2 Cash Inflow vs Outflow (w12-cash-flow) — colSpan 6
+
+**Display**
+- Mantine BarChart, grouped bars: Inflow (#2563EB) + Outflow (#E5E7EB)
+- Grain selector: "Monthly" | "Weekly" pill buttons in titleExtra (stops click propagation)
+- Chart height: 160px
+- Monthly data: Jan(In:38L Out:30L), Feb(In:41L Out:32L), Mar(In:45L Out:33L)
+- Weekly data: W1(In:9L Out:7L), W2(In:11L Out:8L), W3(In:12L Out:9L), W4(In:13L Out:9L)
+
+**Interaction**
+- Clicking grain pills: updates chart data, does NOT open side panel
+- Clicking card body: opens side panel
+
+**Panel content**
+- Detailed cash flow statement (Operating/Investing/Financing)
+- Trend table by period
+- Net cash change callout
+
+#### 5.2.3 Expense Breakdown (w11-exp-breakdown) — colSpan 3
+
+**Display**
+- Compact vertical list, rows distributed to fill card height
+- 5 categories (label left, amount + percentage right):
+  - Salaries — ₹18L · 55%
+  - Marketing — ₹6.5L · 20%
+  - Infrastructure — ₹4.9L · 15%
+  - Travel — ₹1.6L · 5%
+  - Other — ₹1.6L · 5%
+- Progress bar per row: height 3px, #2563EB fill, bg #F9FAFB, border-radius 2px
+
+**Panel content**
+- Month-over-month delta per category
+- Trend sparklines
+- Anomaly callouts for categories up >10% MoM
+
+---
+
+### 5.3 Row 3
+
+#### 5.3.1 AI Insights (full-width) — colSpan 12
+
+**Display**
+- Wrapped in WidgetCard with `disablePanel=true` — NOT clickable, no cursor pointer, no side panel
+- Card title: empty (no title row rendered)
+- Background: white, same card styling as all other widgets
+
+**AIInsightsAccordion structure**
+- Header: "AI Insights" label + "3 insights" badge + "Powered by Claude" tag (right-aligned)
+- Three independently expandable insight chips:
+
+*Insight 1 — DSO Alert (warning)*
+- Chip: "DSO up 12% — Acme Corp contributing 14 days"
+- Expanded: Full explanation of DSO increase from 40→45 days, Acme Corp's ₹2.1L overdue invoices, recommended action.
+
+*Insight 2 — Cash Positive (positive)*
+- Chip: "Cash position healthy — ₹12.45L across 2 accounts"
+- Expanded: 5.2% MoM growth, account breakdown, estimated runway of ~4.2 months.
+
+*Insight 3 — AP Risk (critical)*
+- Chip: "12 AP bills overdue — ₹3.45L at risk of late fees"
+- Expanded: Bills past due, Vendor X ₹4.00L total outstanding, prioritisation advice.
+
+**Expand/collapse interaction**
+- Click insight chip → toggles that insight's Collapse (independent per insight)
+- Other insights unaffected
+- Card never opens side panel
+
+---
+
+### 5.4 Row 4
+
+#### 5.4.1 Revenue Trend (w8-rev-full) — colSpan 5
+
+**Display**
+- Mantine AreaChart, single series (Revenue, #2563EB, 0.15 opacity fill)
+- X-axis: Oct, Nov, Dec, Jan, Feb, Mar
+- Y-axis: ₹L notation
+- Chart height: 160px
+- Data: 32L, 35L, 38L, 40L, 41L, 45L
+
+**Panel content**
+- 12-month area chart
+- Table: Month | Revenue | MoM Δ | YoY Δ
+- Top revenue sources breakdown
+
+#### 5.4.2 Top Customers by Revenue (w9-top-customers) — colSpan 4
+
+**Display**
+- Table, 4 rows sorted by revenue descending
+- Headers: CUSTOMER | REVENUE | SHARE — Space Grotesk 10px 600 #9CA3AF uppercase letter-spacing 0.5px
+- Rows:
+  - Acme Corp | ₹18L | 40%
+  - Beta Ltd | ₹11.25L | 25%
+  - Gamma Inc | ₹9L | 20%
+  - Others | ₹6.75L | 15%
+- Row dividers: 1px #E5E7EB opacity 0.5
+- Row hover: bg #F9FAFB
+- Amount column: right-aligned, Albert Sans 600
+
+**Panel content**
+- Full customer revenue table
+- Revenue trend per customer (sparkline)
+- Invoice history summary per customer
+
+#### 5.4.3 Upcoming Payments (w13-upcoming-cash) — colSpan 3
+
+**Display**
+- Three summary buckets (no individual bill rows):
+  - Overdue: ₹3.45L · 12 bills — critical red badge
+  - Due 0–7 days: ₹1.8L · 5 bills — warning amber badge
+  - Due 8–15 days: ₹4.2L · 8 bills — neutral badge
+- Font: Space Grotesk 13px, #374151
+
+**Panel content**
+- Full bill list per bucket: vendor, invoice number, due date, amount, status badge
+- Sorted: overdue first, then by due date ascending
+
+---
+
+## 6. Payables & Receivables Tab
+
+### 6.1 Row 1 — KPI Strip
+
+#### 6.1.1 AR Outstanding (w14-ar-out) — colSpan 3
+- KPI: ₹18.5L — Albert Sans 700 32px
+- Overdue badge: "₹4.2L overdue · 8 invoices" (bg #FEF2F2, border #FECACA, text #DC2626)
+- Trend: +3.2% vs last month (ar_overdue type → red)
+- Sub-text: "Avg collection: 42 days"
+
+#### 6.1.2 Days Sales Outstanding (w15-dso) — colSpan 3
+- KPI: 45 days — Albert Sans 700 32px
+- Status pill: "15 days above target" — negative (red)
+- Trend: +12% vs last month (negative)
+- Divider
+- Sub-text: "Acme Corp contributing 14 days"
+
+#### 6.1.3 AP Outstanding (w18-ap-out) — colSpan 3
+- KPI: ₹9.45L — Albert Sans 700 32px
+- Overdue badge: "₹3.45L overdue · 12 bills"
+- Trend: +8.1% vs last month (ap_overdue type → red)
+- Sub-text: "Vendor X — largest at ₹4.00L"
+
+#### 6.1.4 Days Payable Outstanding (w19-dpo) — colSpan 3
+- KPI: 38 days — Albert Sans 700 32px
+- Status pill: "Within target range" — positive (green)
+- Trend: −5% vs last month (dpo type → positive/green)
+- Sub-text: "Vendor X ₹2.10L outstanding"
+
+---
+
+### 6.2 Row 2 — Aging Charts
+
+#### 6.2.1 AR Aging (w16-ar-aging) — colSpan 6
+- Mantine BarChart, color #2563EB
+- Buckets: Current | 1–30 | 31–60 | 61–90 | 90+
+- Data: 14.3L | 2.1L | 1.5L | 0.4L | 0.2L
+- Chart height: 200px; gridAxis="x"; tickLine="none"
+
+#### 6.2.2 AP Aging (w20-ap-aging) — colSpan 6
+- Mantine BarChart, color #6366F1
+- Buckets: Current | 1–30 | 31–60 | 61–90 | 90+
+- Data: 6.0L | 2.0L | 1.0L | 0.3L | 0.15L
+- Chart height: 200px
+
+---
+
+### 6.3 Row 3
+
+#### 6.3.1 Vendor Spend Concentration (w21-vendor-spend) — colSpan 12
+- 3-column grid layout
+- Per vendor: name + amount (space-between row) → percentage sub-text → progress bar
+- Progress bar: height 6px, #2563EB fill, opacity decreasing per rank (1.0, 0.8, 0.6)
+- Data:
+  - Vendor X — ₹4.00L — 42% of total spend
+  - Supplier Y — ₹2.50L — 26% of total spend
+  - Agency Z — ₹1.50L — 16% of total spend
+
+---
+
+## 7. Side Panel System
+
+### 7.1 Layout
+- **Width:** 420px; fixed right-side overlay; height 100vh
+- **z-index:** 300
+- **Open animation:** translateX(420px → 0), 0.2s ease-out
+- **Close animation:** translateX(0 → 420px), 0.2s ease-out
+- **Main content:** `paddingRight` shifts to 360px when panel open (transition 0.2s ease-out)
+- **Background:** white; border-left: 1px #E5E7EB
+
+### 7.2 Panel Header
+- Sticky at top; padding 20px 24px; border-bottom 1px #E5E7EB
+- Widget display name — Space Grotesk 600, 16px, #0F1117
+- Date subtitle — Space Grotesk 12px, #9CA3AF ("YYYY-MM-DD — YYYY-MM-DD")
+- Close (×) button — top-right, 32px hit area
+
+### 7.3 Panel Body
+- Padding: 0 24px; overflow-y: auto
+- Section headers: Space Grotesk 600, 11px, #9CA3AF, uppercase, letter-spacing 0.5px
+- Read-only — no action buttons
+
+### 7.4 Trigger Rules
+- Any WidgetCard click → `openPanel(id, 'summary', summaryData)` unless `disablePanel=true`
+- AI Insights card: `disablePanel=true` — never opens panel
+- titleExtra elements: `e.stopPropagation()` — does not trigger panel
+
+### 7.5 Closing
+- Click × in panel header
+- Switch nav tabs (calls `closePanel()`)
+- Escape key — future v2 enhancement
+
+### 7.6 Widget ID → Display Name Map
+| Widget ID | Display Name |
+|---|---|
+| w1-cash | Cash Balance |
+| w2-pnl-compressed | P&L Summary |
+| w3-rev-spark | Revenue Trend |
+| w6-upcoming | Upcoming Payments |
+| w7-gross-profit | Gross Profit |
+| w8-rev-full | Revenue Trend |
+| w9-top-customers | Top Customers |
+| w10-cash-full | Cash Balance |
+| w10-rev-vs-exp | Revenue vs Expense |
+| w11-exp-breakdown | Expense Breakdown |
+| w12-cash-flow | Cash Inflow vs Outflow |
+| w13-upcoming-cash | Upcoming Payments |
+| w14-ar-out | AR Outstanding |
+| w15-dso | Days Sales Outstanding |
+| w16-ar-aging | AR Aging |
+| w18-ap-out | AP Outstanding |
+| w19-dpo | Days Payable Outstanding |
+| w20-ap-aging | AP Aging |
+| w21-vendor-spend | Vendor Spend Concentration |
+
+---
+
+## 8. Shared Components
+
+### 8.1 WidgetCard
+Props: `id`, `title`, `colSpan`, `status`, `onRetry`, `summaryData`, `titleExtra`, `children`, `style`, `disablePanel`
+
+- White bg, 1px #E5E7EB border, 12px radius, 20px 24px padding
+- Box-shadow: 0 1px 3px rgba(0,0,0,0.06)
+- Hover: translateY(-2px), box-shadow 0 4px 12px rgba(0,0,0,0.08), 0.2s ease
+- Title row: omitted entirely when `title` is empty string AND `titleExtra` is absent
+- `cursor: disablePanel ? 'default' : 'pointer'`
+
+### 8.2 TrendBadge
+Props: `value` (number), `label` (string), `type` (optional)
+
+- Default: positive value = green (↑), negative = red (↓)
+- `ar_overdue` / `ap_overdue` / `dso`: positive value = red (bad)
+- `dpo`: negative value = green (good)
+- Value always 1 decimal: `Math.abs(value).toFixed(1)%`
+
+### 8.3 KPIGrid
+- 12-column CSS grid, gap 16px, `alignItems: stretch`
+
+### 8.4 State Overlays
+- **LoadingState:** animated skeleton, full card area
+- **EmptyState:** "No data available" centered with muted icon
+- **ErrorState:** error message + "Retry" button → calls `onRetry`
+
+---
+
+## 9. Design System
+
+### 9.1 Color Tokens
+```
 --color-bg-page:          #F0F2F5
 --color-bg-card:          #FFFFFF
 --color-bg-hover:         #F9FAFB
@@ -532,31 +447,137 @@ SidePanel (Detail view)
 --color-text-muted:       #6B7280
 --color-text-ghost:       #9CA3AF
 --color-accent-blue:      #2563EB
+--color-accent-blue-light:#EFF6FF
 --color-positive:         #16A34A
 --color-positive-bg:      #F0FDF4
---color-warning:          #D97706
---color-warning-bg:       #FFFBEB
 --color-critical:         #DC2626
 --color-critical-bg:      #FEF2F2
+--color-warning:          #D97706
+--color-warning-bg:       #FFFBEB
+--color-live-badge:       #0D9488
 --radius-card:            12px
 --shadow-card:            0 1px 3px rgba(0,0,0,0.06)
 ```
 
-### Fonts
-| Usage | Font | Weights |
-|-------|------|---------|
-| KPI Numbers, Amounts | Albert Sans | 400, 500, 600, 700 |
-| All other text | Space Grotesk | 400, 500, 600 |
+### 9.2 Typography
+- **KPI numbers:** Albert Sans 700
+- **All other text:** Space Grotesk
+- Never use: Inter, Arial, Roboto, system-ui
+
+### 9.3 Number Formatting
+| Range | Format | Example |
+|---|---|---|
+| Under ₹1,00,000 | Full with commas | ₹85,000 |
+| ₹1,00,000 and above | L shorthand | ₹8.5L |
+| ₹1,00,00,000 and above | Cr shorthand | ₹1.2Cr |
+| Chart Y-axes | Always ₹L notation | ₹12L |
+| Deltas | Always 1 decimal | 8.5% |
+
+### 9.4 Status Badges
+| State | Background | Text | Border |
+|---|---|---|---|
+| Overdue | #FEF2F2 | #DC2626 | 1px #FECACA |
+| Pending | #FFFBEB | #D97706 | 1px #FDE68A |
+| Positive | #F0FDF4 | #16A34A | 1px #BBF7D0 |
+
+All: border-radius 4px, padding 2px 6px, font-size 11px, font-weight 500.
 
 ---
 
-## Canonical Data Reference
+## 10. State Architecture
 
-All widgets must display these exact values for consistency:
+### 10.1 DashboardContext (global)
+```typescript
+interface DashboardContextType {
+  activeTab: string;           // 'overview' | 'payables'
+  setActiveTab: (tab: string) => void;
+  dateFrom: string;            // e.g. '2026-03-01'
+  dateTo: string;              // e.g. '2026-03-23'
+  setDateFrom: (d: string) => void;
+  setDateTo: (d: string) => void;
+  isPanelOpen: boolean;
+  openPanel: (id: string, mode: string, data?: any) => void;
+  closePanel: () => void;
+  activePanelId: string | null;
+  panelMode: string | null;
+  panelData: any;
+}
+```
+
+### 10.2 Local Component State
+- `cashGrain: 'monthly' | 'weekly'` — Cash Inflow chart (OverviewTab)
+- `hovered: boolean` — WidgetCard lift effect
+- `expanded: boolean` per insight — AIInsightsAccordion (independent per chip)
+
+---
+
+## 11. Interaction Patterns
+
+### 11.1 Card Click → Side Panel
+1. User clicks WidgetCard body
+2. `handleCardClick` checks `disablePanel`
+3. If enabled: `openPanel(id, 'summary', summaryData)`
+4. Panel slides in, main content shifts right
+
+### 11.2 Nav Tab Switch
+1. User clicks nav item
+2. `setActiveTab(tab)` + `closePanel()` called simultaneously
+3. Panel slides out, new tab content renders
+
+### 11.3 Date Range Change
+1. User selects From or To date (native picker)
+2. `setDateFrom` / `setDateTo` fires in context
+3. `min`/`max` constraints prevent invalid ranges
+4. All widgets re-render (v1: labels only)
+
+### 11.4 Cash Flow Grain Toggle
+1. User clicks "Monthly" / "Weekly" pill (in titleExtra)
+2. `e.stopPropagation()` — panel does NOT open
+3. `cashGrain` state updates → chart re-renders
+
+### 11.5 AI Insights Expand/Collapse
+1. User clicks insight chip
+2. Mantine Collapse toggles for that insight
+3. Other insights unaffected; card stays non-interactive re panel
+
+---
+
+## 12. Edge Cases
+
+### 12.1 Date Range
+- From > To: prevented by min/max constraints on inputs
+- Single-day range: both set to same date — valid
+- Future dates: not prevented in v1
+
+### 12.2 Side Panel
+- Click card while panel open for same card: panel stays open, data unchanged
+- Click card while panel open for different card: panel updates to new widget
+- Tab switch while panel open: panel always closes
+
+### 12.3 Number Formatting
+- Zero values: display as ₹0
+- Negative values (net loss): −₹2.5L
+- Exactly ₹1,00,000: display as ₹1.0L
+
+### 12.4 Widget States
+- `loading`: skeleton overlay replaces all content
+- `empty`: illustration + "No data for selected period"
+- `error`: message + Retry; `onRetry` prop called on click
+- `idle`: treated same as loading
+- `success`: children rendered normally
+
+### 12.5 AI Insights
+- All collapsed: card renders as compact strip (header row only)
+- One expanded: card height grows; other rows unaffected (not stretch-aligned with insights row)
+- Insights hardcoded in v1; Claude API integration in v2
+
+---
+
+## 13. Canonical Data Reference
 
 | Entity | Metric | Value |
-|--------|--------|-------|
-| Total Revenue | This month | ₹45L |
+|---|---|---|
+| Total revenue | This month | ₹45L |
 | Total COGS | This month | ₹26.5L |
 | Gross Profit | This month | ₹18.5L (41% margin) |
 | Operating Expense | This month | ₹6.5L |
@@ -565,32 +586,39 @@ All widgets must display these exact values for consistency:
 | HDFC Current A/c | Balance | ₹8.2L |
 | SBI Savings A/c | Balance | ₹4.25L |
 | AR Outstanding | Total | ₹18.5L |
-| AR Overdue | Amount | ₹4.2L (8 invoices) |
+| AR Overdue | Amount | ₹4.2L · 8 invoices |
 | AP Outstanding | Total | ₹9.45L |
-| AP Overdue | Amount | ₹3.45L (12 bills) |
+| AP Overdue | Amount | ₹3.45L · 12 bills |
 | Upcoming Payments | Overdue | ₹3.45L · 12 bills |
 | Upcoming Payments | 0–7 days | ₹1.8L · 5 bills |
 | Upcoming Payments | 8–15 days | ₹4.2L · 8 bills |
 | Acme Corp | Overdue AR | ₹2.1L |
-| Vendor X | AP Outstanding | ₹4L |
 | DSO | This month | 45 days |
 | DPO | This month | 38 days |
+| Vendor X | Total outstanding | ₹4.00L |
+| Vendor X | DPO contribution | ₹2.10L |
 
 ---
 
-## Definition of Done
+## 14. Out of Scope (v1)
 
-A feature is complete when:
-- [ ] All acceptance criteria for associated requirements pass
-- [ ] No console errors in browser DevTools
-- [ ] Panel opens/closes without animation glitches
-- [ ] All numbers match Canonical Data Reference
-- [ ] Currency formatting follows FR-16 rules
-- [ ] Delta badges show correct color per financial context (Revenue ↑ = green, DSO ↑ = red)
-- [ ] No "No data available" placeholders in production views
-- [ ] Widget display names (not IDs) shown in panel titles
-- [ ] Build passes with zero TypeScript errors
+- Real API integration (all data is hardcoded)
+- Mobile / responsive layout
+- Authentication / multi-user
+- Data export (PDF, CSV)
+- Edit / write operations of any kind
+- Push notifications or alerts
+- Customisable dashboard layout
+- Multi-company switching
+- Dark mode
 
 ---
 
-**End of PRD**
+## 15. Known Gaps — v2 Roadmap
+
+- Side panel detail content is placeholder for most widgets; real drill-down tables not implemented
+- Date range picker does not filter actual data
+- AI Insights need Claude API integration
+- No loading/error states wired to real data fetching
+- No keyboard accessibility (Escape to close panel, tab focus management)
+- Chart tooltips not styled to design system

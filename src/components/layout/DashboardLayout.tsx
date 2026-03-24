@@ -3,7 +3,6 @@ import { AppShell, Group, Text, Box, UnstyledButton } from '@mantine/core';
 import { useDashboard } from '../../context/DashboardContext';
 import {
   IconLayoutDashboard,
-  IconBuildingBank,
   IconReceipt2,
 } from '@tabler/icons-react';
 import { SidePanel } from './SidePanel';
@@ -14,7 +13,6 @@ interface DashboardLayoutProps {
 
 const NAV_ITEMS = [
   { tab: 'overview',  icon: IconLayoutDashboard, label: 'Overview' },
-  { tab: 'cash',      icon: IconBuildingBank,    label: 'Cash' },
   { tab: 'payables',  icon: IconReceipt2,        label: 'Payables & Receivables' },
 ];
 
