@@ -1,6 +1,6 @@
 # AIA Financial Dashboard — Product Requirements Document
 
-**Version:** 1.0
+**Version:** 2.0
 **Date:** 2026-03-24
 **Status:** Final
 
@@ -52,7 +52,7 @@ App
 │   ├── Row 2: AR Aging (6col) | AP Aging (6col)
 │   └── Row 3: Vendor Spend Concentration (12col)
 └── Side Panel (global overlay, 420px, right-anchored)
-    └── Per-widget detail views
+    └── Per-widget detail views (see Section 7)
 ```
 
 ---
@@ -113,12 +113,6 @@ App
 - Divider: 1px #E5E7EB, margin 8px 0
 - COGS line: "COGS: ₹26.5L" — Space Grotesk 12px, #6B7280
 
-**Panel content**
-- Header: "Gross Profit" + date range subtitle
-- Gross Profit breakdown (Revenue ₹45L − COGS ₹26.5L = ₹18.5L)
-- Margin trend chart (monthly %, last 6 months)
-- COGS composition table (materials, labour, other)
-
 #### 5.1.2 Cash Balance (w10-cash-full) — colSpan 3
 
 **Display**
@@ -130,11 +124,6 @@ App
   - Each row: account name left, amount right; Space Grotesk 12px; Albert Sans 600 for amount
 - Trend badge: +5.2% vs last month (positive, green)
 
-**Panel content**
-- Total with account breakdown
-- 30-day cash balance area chart
-- Transaction-level inflow/outflow summary
-
 #### 5.1.3 Revenue vs Expense (w10-rev-vs-exp) — colSpan 6
 
 **Display**
@@ -144,11 +133,6 @@ App
 - Chart height: 160px
 - Legend: Revenue ● Expense ● Net Income, Space Grotesk 11px
 - Latest data point: Revenue ₹45L, Expense ₹33L, Net ₹12L
-
-**Panel content**
-- Full-size chart with 12-month history
-- Monthly table: Revenue | COGS | Gross Profit | OpEx | Net Income
-- YoY comparison
 
 ---
 
@@ -166,10 +150,6 @@ App
   - **Operating Profit — ₹12L** (bold, positive green)
 - Font: Space Grotesk 13px for labels, Albert Sans 600 for values
 
-**Panel content**
-- Full P&L statement with additional line items (depreciation, interest, tax, net profit)
-- Sparkline trend for each major line item
-
 #### 5.2.2 Cash Inflow vs Outflow (w12-cash-flow) — colSpan 6
 
 **Display**
@@ -183,11 +163,6 @@ App
 - Clicking grain pills: updates chart data, does NOT open side panel
 - Clicking card body: opens side panel
 
-**Panel content**
-- Detailed cash flow statement (Operating/Investing/Financing)
-- Trend table by period
-- Net cash change callout
-
 #### 5.2.3 Expense Breakdown (w11-exp-breakdown) — colSpan 3
 
 **Display**
@@ -199,11 +174,6 @@ App
   - Travel — ₹1.6L · 5%
   - Other — ₹1.6L · 5%
 - Progress bar per row: height 3px, #2563EB fill, bg #F9FAFB, border-radius 2px
-
-**Panel content**
-- Month-over-month delta per category
-- Trend sparklines
-- Anomaly callouts for categories up >10% MoM
 
 ---
 
@@ -222,20 +192,19 @@ App
 
 *Insight 1 — DSO Alert (warning)*
 - Chip: "DSO up 12% — Acme Corp contributing 14 days"
-- Expanded: Full explanation of DSO increase from 40→45 days, Acme Corp's ₹2.1L overdue invoices, recommended action.
+- Expanded: "Days Sales Outstanding has increased from 40 to 45 days this month, with Acme Corp accounting for 14 of those days. Their three invoices totalling ₹2.1L are now 18–32 days overdue. Recommend scheduling a follow-up call and reviewing their credit terms."
 
 *Insight 2 — Cash Positive (positive)*
 - Chip: "Cash position healthy — ₹12.45L across 2 accounts"
-- Expanded: 5.2% MoM growth, account breakdown, estimated runway of ~4.2 months.
+- Expanded: "Your cash balance has grown 5.2% month-over-month, driven by strong collections in the first three weeks of March. HDFC Current Account holds ₹8.2L and SBI Savings holds ₹4.25L. Runway at current burn rate is approximately 4.2 months."
 
 *Insight 3 — AP Risk (critical)*
 - Chip: "12 AP bills overdue — ₹3.45L at risk of late fees"
-- Expanded: Bills past due, Vendor X ₹4.00L total outstanding, prioritisation advice.
+- Expanded: "Twelve vendor bills totalling ₹3.45L are past their due date. Vendor X has the largest outstanding amount at ₹4.00L total. Prioritise clearing bills older than 60 days to avoid late payment penalties, starting with the ₹1.2L Vendor X invoice due 15 days ago."
 
 **Expand/collapse interaction**
 - Click insight chip → toggles that insight's Collapse (independent per insight)
-- Other insights unaffected
-- Card never opens side panel
+- Other insights unaffected; card never opens side panel
 
 ---
 
@@ -250,11 +219,6 @@ App
 - Chart height: 160px
 - Data: 32L, 35L, 38L, 40L, 41L, 45L
 
-**Panel content**
-- 12-month area chart
-- Table: Month | Revenue | MoM Δ | YoY Δ
-- Top revenue sources breakdown
-
 #### 5.4.2 Top Customers by Revenue (w9-top-customers) — colSpan 4
 
 **Display**
@@ -265,14 +229,8 @@ App
   - Beta Ltd | ₹11.25L | 25%
   - Gamma Inc | ₹9L | 20%
   - Others | ₹6.75L | 15%
-- Row dividers: 1px #E5E7EB opacity 0.5
-- Row hover: bg #F9FAFB
+- Row dividers: 1px #E5E7EB opacity 0.5; Row hover: bg #F9FAFB
 - Amount column: right-aligned, Albert Sans 600
-
-**Panel content**
-- Full customer revenue table
-- Revenue trend per customer (sparkline)
-- Invoice history summary per customer
 
 #### 5.4.3 Upcoming Payments (w13-upcoming-cash) — colSpan 3
 
@@ -282,10 +240,6 @@ App
   - Due 0–7 days: ₹1.8L · 5 bills — warning amber badge
   - Due 8–15 days: ₹4.2L · 8 bills — neutral badge
 - Font: Space Grotesk 13px, #374151
-
-**Panel content**
-- Full bill list per bucket: vendor, invoice number, due date, amount, status badge
-- Sorted: overdue first, then by due date ascending
 
 ---
 
@@ -352,7 +306,7 @@ App
 ## 7. Side Panel System
 
 ### 7.1 Layout
-- **Width:** 420px; fixed right-side overlay; height 100vh
+- **Width:** 420px; fixed right-side overlay; height calc(100vh − 56px); top: 56px
 - **z-index:** 300
 - **Open animation:** translateX(420px → 0), 0.2s ease-out
 - **Close animation:** translateX(0 → 420px), 0.2s ease-out
@@ -363,24 +317,460 @@ App
 - Sticky at top; padding 20px 24px; border-bottom 1px #E5E7EB
 - Widget display name — Space Grotesk 600, 16px, #0F1117
 - Date subtitle — Space Grotesk 12px, #9CA3AF ("YYYY-MM-DD — YYYY-MM-DD")
-- Close (×) button — top-right, 32px hit area
+- Close (×) button — top-right, 32px hit area, calls `closePanel()`
 
 ### 7.3 Panel Body
-- Padding: 0 24px; overflow-y: auto
-- Section headers: Space Grotesk 600, 11px, #9CA3AF, uppercase, letter-spacing 0.5px
+- Uses Mantine ScrollArea; padding 0 24px; overflow-y: auto
+- Sections separated by PanelSection wrapper (padding 18px 0; border-bottom 1px #E5E7EB; last section: no border, padding-bottom 24px)
+- Section headers (SectionLabel): Space Grotesk 600, 10px, #9CA3AF, uppercase, letter-spacing 0.8px, mb 10px
 - Read-only — no action buttons
 
-### 7.4 Trigger Rules
+### 7.4 Shared Panel Sub-Components
+
+**StatusBadge** — inline pill
+- `overdue`: bg #FEF2F2, text #DC2626, border #FECACA
+- `due`: bg #F9FAFB, text #374151, border #E5E7EB
+- `positive`: bg #F0FDF4, text #16A34A, border #BBF7D0
+- `warning`: bg #FFFBEB, text #D97706, border #FDE68A
+- All: border-radius 4px, padding 2px 6px, font-size 11px, font-weight 500
+
+**Table headers (TH)** — Space Grotesk 10px 600 #9CA3AF uppercase letter-spacing 0.8px; align left by default, right when specified
+
+**Table cells (TD)** — Space Grotesk 13px #0F1117; Albert Sans 600 when `bold=true`; padding 9px 0; vertical-align middle
+
+**Table rows (TR)** — border-bottom 1px rgba(0,0,0,0.04)
+
+**Hairline** — 1px #E5E7EB, margin 8px 0
+
+**PLSubRow** — indented sub-item: "└─ {label}" left, amount right; Space Grotesk 12px #6B7280
+
+### 7.5 Trigger Rules
 - Any WidgetCard click → `openPanel(id, 'summary', summaryData)` unless `disablePanel=true`
 - AI Insights card: `disablePanel=true` — never opens panel
 - titleExtra elements: `e.stopPropagation()` — does not trigger panel
 
-### 7.5 Closing
+### 7.6 Closing
 - Click × in panel header
 - Switch nav tabs (calls `closePanel()`)
-- Escape key — future v2 enhancement
+- Press Escape key (keydown listener registered while panel is open; automatically removed on close)
 
-### 7.6 Widget ID → Display Name Map
+### 7.7 Fallback
+Any widget ID not covered by a specific panel view renders:
+> "No additional detail available for this widget." — Space Grotesk sm #9CA3AF, centered, py 40px
+
+---
+
+## 7.8 Per-Widget Panel Content
+
+### 7.8.1 Gross Profit Panel (w7-gross-profit)
+
+**Section 1 — THIS PERIOD**
+| Row | Value |
+|---|---|
+| Gross Profit | ₹18.5L |
+| Gross Margin | 41% (blue pill: bg #EFF6FF, text #2563EB) |
+| Revenue | ₹45L |
+| COGS | ₹26.5L |
+| Delta | ↑ ₹1.3L vs last month (green) |
+
+**Section 2 — COMPARISON** (last)
+Table: METRIC | THIS MONTH | LAST MONTH | CHANGE
+- Revenue: ₹45L | ₹42L | ↑ 7.1% (green)
+- COGS: ₹26.5L | ₹24.8L | ↑ 6.9% (red — cost increase)
+- Gross Profit: ₹18.5L | ₹17.2L | ↑ 7.6% (green)
+- Gross Margin: 41% | 40.9% | ↑ 0.1pp (green)
+
+---
+
+### 7.8.2 Cash Balance Panel (w1-cash / w10-cash-full)
+
+**Section 1 — ACCOUNT BALANCES**
+Table: ACCOUNT | TYPE | BALANCE | CHANGE
+- HDFC Current A/c | Current | ₹8.2L | ↑ ₹45,000 (green)
+- SBI Savings A/c | Savings | ₹4.25L | ↓ ₹12,000 (red)
+- Hairline separator
+- Total row: **Total Balance ₹12.45L ↑ 8.5%** (bold, green delta)
+
+**Section 2 — RECENT MOVEMENTS** (last)
+Table: DATE | DESCRIPTION | AMOUNT (credit = green +, debit = red −)
+- 14 Mar · NEFT from Acme Corp · +₹2.50L
+- 13 Mar · Vendor X Payment · −₹1.40L
+- 12 Mar · NEFT from Globex · +₹85,000
+- 11 Mar · Salary disbursement · −₹4.20L
+- 10 Mar · NEFT from Soylent · +₹1.20L
+
+---
+
+### 7.8.3 P&L Summary Panel (w2-pnl-compressed)
+
+**Section 1 — THIS PERIOD**
+P&L statement layout:
+- Revenue: ₹45L
+- COGS: ₹26.5L
+- Hairline
+- **Gross Profit** ₹18.5L + "41%" blue pill
+- Operating Expense: ₹6.5L
+- Hairline
+- **Operating Profit: ₹12L** (bold, 14px)
+
+**Section 2 — VS LAST MONTH** (last)
+Table: (blank) | THIS MONTH | LAST MONTH | CHANGE
+- Revenue: ₹45L | ₹42L | ↑ 7.1% (green)
+- Gross Profit: ₹18.5L | ₹17.2L | ↑ 7.6% (green)
+- Operating Expense: ₹6.5L | ₹6.3L | ↑ 3.2% (red — cost increase)
+- Operating Profit: ₹12L | ₹10.9L | ↑ 10.1% (green)
+
+---
+
+### 7.8.4 Revenue Trend Panel (w3-rev-spark / w8-rev-full)
+
+**Section 1 — CURRENT PERIOD**
+- ₹45L this month (Albert Sans 700, 24px)
+- ↑ 7.1% vs last month badge (green pill, border-radius 10px)
+
+**Section 2 — MONTHLY BREAKDOWN**
+Table: MONTH | REVENUE | MOM CHANGE
+- Jan 2026: ₹30L | —
+- Feb 2026: ₹31.5L | ↑ 5.0%
+- Mar 2026: ₹32L | ↑ 1.6%
+- Apr 2026: ₹34L | ↑ 6.3%
+- May 2026: ₹38L | ↑ 11.8%
+- Jun 2026: ₹45L | ↑ 18.4%
+
+**Section 3 — TOP CUSTOMERS THIS MONTH** (last)
+Rows (name left, amount + share right; border-bottom between):
+- Acme Corp · ₹12L · 26.7%
+- Globex Inc · ₹8.5L · 18.9%
+- Soylent Corp · ₹4.2L · 9.3%
+
+---
+
+### 7.8.5 Days Sales Outstanding Panel (w15-dso)
+
+**Section 1 — METRIC**
+- 45 days (Albert Sans 700, 28px)
+- ↑ 12% vs last month badge (red pill)
+- "Target: 40 days" — Space Grotesk 12px, #6B7280
+- StatusBadge: "15 days above target" (overdue variant)
+
+**Section 2 — CUSTOMER CONTRIBUTION**
+Table: CUSTOMER | CONTRIB | AVG DAYS | OUTSTANDING
+- Acme Corp | 14d · 31% | 67d | ₹2.10L
+- Soylent Corp | 8d · 18% | 43d | ₹1.20L
+- Globex Inc | 6d · 13% | 38d | ₹90,000
+- Others | 17d · 38% | — | ₹4.30L
+- **Total row:** 45d · 100% | — | ₹8.60L
+
+**Section 3 — TREND — LAST 3 MONTHS** (last)
+Table: MONTH | DSO | CHANGE
+- Jan 2026: 38 days | —
+- Feb 2026: 41 days | ↑ 7.9% (red)
+- Mar 2026: 45 days | ↑ 9.8% (red)
+- Italic note: "DSO has risen 3 consecutive months." (#D97706 warning)
+
+---
+
+### 7.8.6 Days Payable Outstanding Panel (w19-dpo)
+
+**Section 1 — METRIC**
+- 38 days (Albert Sans 700, 28px)
+- ↓ 5% vs last month badge (neutral grey pill)
+- "Target range: 30–45 days" — Space Grotesk 12px, #6B7280
+- StatusBadge: "Within target range" (positive variant)
+
+**Section 2 — VENDOR CONTRIBUTION**
+Table: VENDOR | CONTRIB | AVG DAYS | OUTSTANDING
+- Vendor X | 12d · 32% | 45d | ₹2.10L
+- Supplier Y | 8d · 21% | 38d | ₹1.40L
+- Agency Z | 5d · 13% | 32d | ₹80,000
+- Others | 13d · 34% | — | ₹2.95L
+- **Total row:** 38d · 100% | — | ₹7.25L
+
+**Section 3 — TREND — LAST 3 MONTHS** (last)
+Table: MONTH | DPO | CHANGE
+- Jan 2026: 42 days | —
+- Feb 2026: 40 days | ↓ 4.8% (#6B7280 muted)
+- Mar 2026: 38 days | ↓ 5.0% (#6B7280 muted)
+- Italic note: "DPO is declining but remains within target floor (30 days)." (#D97706 warning)
+
+---
+
+### 7.8.7 Upcoming Payments Panel (w6-upcoming / w13-upcoming-cash / w22-upcoming-ap)
+
+Three sections, each with a sub-header label and summary line before the table:
+
+**Section 1 — OVERDUE**
+- Sub-header: "OVERDUE" in #DC2626
+- Summary: "₹3.45L · 12 bills"
+- Table: VENDOR / BILL NO | AMOUNT | OVERDUE
+  - Vendor X · #1042 | ₹1.40L | 14d overdue
+  - Supplier Y · #892 | ₹90,000 | 11d overdue
+  - Agency Z · #331 | ₹72,000 | 9d overdue
+  - Petty Cash · #112 | ₹43,000 | 6d overdue
+  - Footer: "+ 8 more bills — ₹2.00L total" (red, 11px)
+
+**Section 2 — DUE IN 0–7 DAYS**
+- Summary: "₹1.80L · 5 bills"
+- Table: VENDOR / BILL NO | AMOUNT | DUE DATE
+  - Vendor A · #205 | ₹60,000 | Due 26 Mar 2026
+  - Vendor B · #301 | ₹75,000 | Due 28 Mar 2026
+  - Vendor C · #144 | ₹45,000 | Due 30 Mar 2026
+  - Footer: "+ 2 more bills" (#9CA3AF, 11px)
+
+**Section 3 — DUE IN 8–15 DAYS** (last)
+- Summary: "₹4.20L · 8 bills"
+- Table: VENDOR / BILL NO | AMOUNT | DUE DATE
+  - Vendor D · #408 | ₹1.20L | Due 2 Apr 2026
+  - Vendor E · #519 | ₹90,000 | Due 5 Apr 2026
+  - Vendor F · #312 | ₹60,000 | Due 8 Apr 2026
+  - Footer: "+ 5 more bills" (#9CA3AF, 11px)
+
+---
+
+### 7.8.8 Top Customers Panel (w9-top-customers)
+
+**Interactive:** clicking a customer row (except "Others") selects it and updates Section 2.
+- Selected row: bg #F9FAFB, font-weight 600
+- "Others" row: not clickable (cursor default)
+
+**Section 1 — RANKINGS — BY REVENUE**
+Table: # | CUSTOMER | REVENUE | SHARE | VS LM
+1. Acme Corp | ₹12L | 26.7% | ↑ 8.2%
+2. Globex Inc | ₹8.5L | 18.9% | ↑ 3.1%
+3. Soylent Corp | ₹4.2L | 9.3% | ↓ 2.4%
+4. Initech | ₹1.8L | 4.0% | ↑ 0.9%
+5. Others | ₹18.5L | 41.1% | —
+*(Default selected: Acme Corp)*
+
+**Section 2 — OPEN INVOICES — {SELECTED CUSTOMER}** (last)
+Table: INVOICE | AMOUNT | DUE DATE | STATUS
+
+For Acme Corp:
+- INV-2241 | ₹2.10L | 15 Feb 2026 | Overdue 30d
+- INV-2318 | ₹3.20L | 12 Mar 2026 | Due in 12d
+- INV-2401 | ₹6.70L | 30 Mar 2026 | Due in 30d
+
+For Globex Inc:
+- INV-2187 | ₹90,000 | 28 Feb 2026 | Overdue 17d
+- INV-2302 | ₹7.60L | 20 Mar 2026 | Due in 20d
+
+For Soylent Corp:
+- INV-2198 | ₹1.20L | 22 Feb 2026 | Overdue 23d
+- INV-2389 | ₹3.00L | 4 Apr 2026 | Due in 34d
+
+---
+
+### 7.8.9 Revenue vs Expense Panel (w10-rev-vs-exp)
+
+**Section 1 — SUMMARY**
+3-column KPI grid:
+- Revenue: ₹45L · ↑ 7.1%
+- Expense: ₹33L · ↑ 3.8% (red — cost increase)
+- Net Surplus: ₹12L · ↑ 26.7% (green text)
+
+**Section 2 — MONTHLY BREAKDOWN**
+Table: MONTH | REVENUE | EXPENSE | NET SURPLUS | MARGIN
+- Jan 2026: ₹30L | ₹25L | ₹5L | 16.7%
+- Feb 2026: ₹31.5L | ₹26L | ₹5.5L | 17.5%
+- Mar 2026: ₹32L | ₹26.5L | ₹5.5L | 17.2%
+- Apr 2026: ₹34L | ₹27L | ₹7L | 20.6%
+- May 2026: ₹38L | ₹28L | ₹10L | 26.3%
+- Jun 2026: ₹45L | ₹33L | ₹12L | 26.7%
+
+**Section 3 — EXPENSE BY CATEGORY** (last)
+Table: CATEGORY | AMOUNT | % OF EXPENSE
+- COGS | ₹26.5L | 80%
+- Salaries | ₹3.2L | 10%
+- Rent | ₹1.2L | 4%
+- Marketing | ₹95,000 | 3%
+- Other | ₹1.15L | 3%
+- **Total: ₹33L | 100%**
+
+---
+
+### 7.8.10 Expense Breakdown Panel (w11-exp-breakdown)
+
+**Interactive:** clicking a category row selects it and updates Section 2 with sub-ledger detail.
+- Selected row: bg #F9FAFB, font-weight 600
+*(Default selected: COGS)*
+
+**Section 1 — BY CATEGORY**
+Table: CATEGORY | AMOUNT | % OF TOTAL | VS LAST MONTH
+- COGS | ₹26.5L | 80% | ↑ 6.9% (red — cost increase)
+- Salaries | ₹3.2L | 10% | ↑ 1.3% (red)
+- Rent | ₹1.2L | 4% | → 0% (#6B7280)
+- Marketing | ₹95,000 | 3% | ↑ 2.1% (red)
+- Other | ₹1.15L | 3% | ↓ 0.9% (#6B7280)
+- **Total: ₹33L | 100% | ↑ 3.8% (red)**
+
+**Section 2 — {SELECTED CATEGORY} DETAIL** (last)
+
+For COGS (has sub-ledger):
+Table: LEDGER | AMOUNT | % OF COGS
+- Purchase Accounts | ₹22L | 83%
+- Direct Expenses | ₹4.5L | 17%
+- Italic note: "Direct Expenses classified under COGS only. They do not appear in Operating Expense."
+
+For all other categories:
+> "No sub-ledger detail available for this category." (italic, #9CA3AF)
+
+---
+
+### 7.8.11 Cash Inflow vs Outflow Panel (w12-cash-flow)
+
+**Section 1 — SUMMARY**
+3-column KPI grid:
+- Cash In: ₹48.2L
+- Cash Out: ₹35.8L
+- Net Flow: +₹12.4L (green)
+
+**Section 2 — WEEKLY BREAKDOWN**
+Table: WEEK | CASH IN | CASH OUT | NET
+- W1 (1–7 Mar): ₹10.2L | ₹8.8L | +₹1.4L (green)
+- W2 (8–14 Mar): ₹9.8L | ₹10.1L | −₹0.3L (red)
+- W3 (15–21 Mar): ₹16.5L | ₹9.4L | +₹7.1L (green)
+- W4 (22–30 Mar): ₹11.7L | ₹7.5L | +₹4.2L (green)
+
+**Section 3 — INFLOW SOURCES**
+Table: SOURCE | AMOUNT | % OF INFLOW
+- Customer payments | ₹42.5L | 88%
+- Advance receipts | ₹3.8L | 8%
+- Other inflows | ₹1.9L | 4%
+
+**Section 4 — OUTFLOW CATEGORIES** (last)
+Table: CATEGORY | AMOUNT | % OF OUTFLOW
+- Vendor payments | ₹18.5L | 52%
+- Salaries | ₹8.2L | 23%
+- Rent | ₹3.5L | 10%
+- Tax payments | ₹2.8L | 8%
+- Other | ₹2.8L | 7%
+- Italic note: "Internal transfers excluded from both inflow and outflow."
+
+---
+
+### 7.8.12 AR Outstanding Panel (w14-ar-out)
+
+**Section 1 — SUMMARY**
+3-column KPI grid:
+- TOTAL AR: ₹18.5L
+- OVERDUE: ₹4.2L (text #DC2626) · "8 invoices"
+- AVG AGE: 42 days
+
+**Section 2 — OPEN INVOICES** (last)
+Table: CUSTOMER | INVOICE | AMOUNT | DUE DATE | STATUS
+- Acme Corp | INV-2241 | ₹2.10L | 15 Feb 2026 | Overdue 30d
+- Soylent Corp | INV-2198 | ₹1.20L | 22 Feb 2026 | Overdue 23d
+- Globex Inc | INV-2187 | ₹90,000 | 28 Feb 2026 | Overdue 17d
+- Initech | INV-2301 | ₹1.80L | 5 Mar 2026 | Due in 5d
+- Umbrella Co | INV-2318 | ₹3.20L | 12 Mar 2026 | Due in 12d
+- Acme Corp | INV-2402 | ₹6.70L | 30 Mar 2026 | Due in 30d
+- Soylent Corp | INV-2389 | ₹2.10L | 4 Apr 2026 | Due in 34d
+
+Footer: "Advance payments received (not yet invoiced): ₹0" (italic, #9CA3AF)
+
+---
+
+### 7.8.13 AR Aging Panel (w16-ar-aging)
+
+**Section 1 — BUCKET SUMMARY**
+Table: BUCKET | INVOICES | AMOUNT | % TOTAL AR
+- Current | 22 | ₹14.30L | 77.3%
+- 1–30 days | 3 | ₹2.10L | 11.4%
+- 31–60 days | 2 | ₹1.20L | 6.5%
+- 61–90 days | 1 | ₹65,000 | 3.5%
+- 90+ days | 1 | ₹25,000 | 1.4%
+- **Total: 29 | ₹18.50L | 100%**
+
+**Section 2 — ALL OVERDUE INVOICES** (last)
+Table: CUSTOMER | INVOICE | AMOUNT | DAYS OVERDUE
+- Acme Corp | INV-2241 | ₹2.10L | 30d (red)
+- Soylent Corp | INV-2198 | ₹1.20L | 23d (red)
+- Globex Inc | INV-2187 | ₹90,000 | 17d (red)
+- Acme Corp | INV-2089 | ₹65,000 | 68d (red)
+- Soylent Corp | INV-1998 | ₹25,000 | 94d (red)
+
+---
+
+### 7.8.14 AP Outstanding Panel (w18-ap-out)
+
+**Section 1 — SUMMARY**
+3-column KPI grid:
+- TOTAL AP: ₹9.45L
+- OVERDUE: ₹3.45L (text #DC2626) · "12 bills"
+- LARGEST VENDOR: Vendor X · ₹4L
+
+**Section 2 — OPEN BILLS** (last)
+Table: VENDOR | BILL NO | AMOUNT | DUE DATE | STATUS
+- Vendor X | BL-441 | ₹1.40L | 18 Feb 2026 | Overdue 14d
+- Supplier Y | BL-398 | ₹90,000 | 21 Feb 2026 | Overdue 11d
+- Agency Z | BL-412 | ₹72,000 | 23 Feb 2026 | Overdue 9d
+- Petty Cash | BL-112 | ₹43,000 | 26 Feb 2026 | Overdue 6d
+- Vendor X | BL-519 | ₹2.60L | 8 Mar 2026 | Due in 8d
+- Supplier Y | BL-521 | ₹90,000 | 14 Mar 2026 | Due in 14d
+- Agency Z | BL-498 | ₹78,000 | 18 Mar 2026 | Due in 18d
+
+Footer: "Vendor advances paid (not yet billed): ₹0" (italic, #9CA3AF)
+
+---
+
+### 7.8.15 AP Aging Panel (w20-ap-aging)
+
+**Section 1 — BUCKET SUMMARY**
+Table: BUCKET | BILLS | AMOUNT | % TOTAL AP
+- Current | 18 | ₹6.10L | 64.6%
+- 1–30 days | 6 | ₹1.60L | 16.9%
+- 31–60 days | 4 | ₹1.05L | 11.1%
+- 61–90 days | 3 | ₹52,000 | 5.5%
+- 90+ days | 1 | ₹18,000 | 1.9%
+- **Total: 32 | ₹9.45L | 100%**
+
+**Section 2 — ALL OVERDUE BILLS** (last)
+Table: VENDOR | BILL NO | AMOUNT | DUE DATE | DAYS OVERDUE
+- Vendor X | BL-441 | ₹1.40L | 18 Feb | 14d (red)
+- Supplier Y | BL-398 | ₹90,000 | 21 Feb | 11d (red)
+- Agency Z | BL-412 | ₹72,000 | 23 Feb | 9d (red)
+- Petty Cash | BL-112 | ₹43,000 | 26 Feb | 6d (red)
+- Vendor X | BL-302 | ₹52,000 | 14 Jan | 47d (red)
+- Supplier Y | BL-287 | ₹35,000 | 20 Jan | 41d (red)
+- Vendor X | BL-198 | ₹18,000 | 15 Dec | 77d (red)
+
+---
+
+### 7.8.16 Vendor Spend Concentration Panel (w21-vendor-spend)
+
+**Interactive:** clicking a vendor row (except "Others") selects it and updates Section 2.
+- Selected row: bg #F9FAFB, font-weight 600
+*(Default selected: Vendor X)*
+
+**Section 1 — TOP VENDORS**
+Table: # | VENDOR | BILLED | SHARE | VS LM
+1. Vendor X | ₹4.00L | 42.3% | ↑ 5.2% (green)
+2. Supplier Y | ₹2.50L | 26.5% | ↓ 1.8% (red)
+3. Agency Z | ₹1.50L | 15.9% | ↑ 0.4% (green)
+4. Others | ₹1.45L | 15.3% | — (not clickable)
+
+Footer: "Vendor X accounts for 42.3% of total billed spend this month." (warning #D97706 when Vendor X selected; muted otherwise)
+
+**Section 2 — BILLS — {SELECTED VENDOR}** (last)
+Table: BILL NO | AMOUNT | DATE | STATUS
+
+For Vendor X:
+- BL-441 | ₹1.40L | 18 Feb 2026 | Overdue 14d
+- BL-519 | ₹2.60L | 8 Mar 2026 | Due in 8d
+
+For Supplier Y:
+- BL-398 | ₹90,000 | 21 Feb 2026 | Overdue 11d
+- BL-521 | ₹90,000 | 14 Mar 2026 | Due in 14d
+
+For Agency Z:
+- BL-412 | ₹72,000 | 23 Feb 2026 | Overdue 9d
+- BL-498 | ₹78,000 | 18 Mar 2026 | Due in 18d
+
+Footer: "Total billed this month: {sum} across {count} bills" (Space Grotesk 12px #6B7280)
+
+---
+
+### 7.9 Widget ID → Display Name Map
 | Widget ID | Display Name |
 |---|---|
 | w1-cash | Cash Balance |
@@ -388,6 +778,7 @@ App
 | w3-rev-spark | Revenue Trend |
 | w6-upcoming | Upcoming Payments |
 | w7-gross-profit | Gross Profit |
+| w7-pnl-full | P&L Statement |
 | w8-rev-full | Revenue Trend |
 | w9-top-customers | Top Customers |
 | w10-cash-full | Cash Balance |
@@ -508,6 +899,9 @@ interface DashboardContextType {
 - `cashGrain: 'monthly' | 'weekly'` — Cash Inflow chart (OverviewTab)
 - `hovered: boolean` — WidgetCard lift effect
 - `expanded: boolean` per insight — AIInsightsAccordion (independent per chip)
+- `selectedCustomer: string` — Top Customers and AR panels (default: 'Acme Corp')
+- `selectedVendor: string` — Vendor Spend panel (default: 'Vendor X')
+- `selectedCat: string` — Expense Breakdown panel (default: 'COGS')
 
 ---
 
@@ -517,7 +911,7 @@ interface DashboardContextType {
 1. User clicks WidgetCard body
 2. `handleCardClick` checks `disablePanel`
 3. If enabled: `openPanel(id, 'summary', summaryData)`
-4. Panel slides in, main content shifts right
+4. Panel slides in (translateX), main content shifts right (paddingRight 360px)
 
 ### 11.2 Nav Tab Switch
 1. User clicks nav item
@@ -540,6 +934,17 @@ interface DashboardContextType {
 2. Mantine Collapse toggles for that insight
 3. Other insights unaffected; card stays non-interactive re panel
 
+### 11.6 Panel Interactive Tables
+1. User clicks a selectable row (customer / vendor / expense category)
+2. `selectedCustomer` / `selectedVendor` / `selectedCat` state updates
+3. Section 2 of that panel re-renders immediately with new data
+4. Selected row highlighted: bg #F9FAFB, font-weight 600
+
+### 11.7 Close Panel via Escape
+1. Panel is open; user presses Escape key
+2. keydown listener (registered on open, removed on close) calls `closePanel()`
+3. Panel slides out
+
 ---
 
 ## 12. Edge Cases
@@ -553,6 +958,7 @@ interface DashboardContextType {
 - Click card while panel open for same card: panel stays open, data unchanged
 - Click card while panel open for different card: panel updates to new widget
 - Tab switch while panel open: panel always closes
+- Escape key: closes panel (already implemented)
 
 ### 12.3 Number Formatting
 - Zero values: display as ₹0
@@ -570,6 +976,11 @@ interface DashboardContextType {
 - All collapsed: card renders as compact strip (header row only)
 - One expanded: card height grows; other rows unaffected (not stretch-aligned with insights row)
 - Insights hardcoded in v1; Claude API integration in v2
+
+### 12.6 Panel Interactive Tables
+- "Others" row in customer/vendor tables: not clickable; cursor default
+- If selected customer/vendor has no sub-data: Section 2 shows fallback text
+- Clicking a row that is already selected: no-op (remains selected, no visual change)
 
 ---
 
@@ -597,6 +1008,9 @@ interface DashboardContextType {
 | DPO | This month | 38 days |
 | Vendor X | Total outstanding | ₹4.00L |
 | Vendor X | DPO contribution | ₹2.10L |
+| DSO target | — | 30 days |
+| DPO target range | — | 30–45 days |
+| Gross margin target | — | 40%+ |
 
 ---
 
@@ -616,9 +1030,9 @@ interface DashboardContextType {
 
 ## 15. Known Gaps — v2 Roadmap
 
-- Side panel detail content is placeholder for most widgets; real drill-down tables not implemented
-- Date range picker does not filter actual data
-- AI Insights need Claude API integration
+- Date range picker does not filter actual data (labels update but underlying data is static)
+- AI Insights are hardcoded strings; needs Claude API integration with real accounting data
 - No loading/error states wired to real data fetching
-- No keyboard accessibility (Escape to close panel, tab focus management)
-- Chart tooltips not styled to design system
+- Chart tooltips not styled to design system (use browser/library defaults)
+- Side panel transaction dates reference Nov 2024 in some widgets; should use date range context in v2
+- No pagination in panel tables (bills/invoices beyond shown rows are noted as "+ N more" but not navigable)

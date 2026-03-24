@@ -10,6 +10,7 @@ interface DashboardState {
   dateTo: string;
   setDateFrom: (d: string) => void;
   setDateTo: (d: string) => void;
+  isCurrentPeriod: boolean;
   isPanelOpen: boolean;
   activeWidgetId: string | null;
   panelView: PanelView;
@@ -24,11 +25,14 @@ const DashboardContext = createContext<DashboardState | undefined>(undefined);
 export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [dateFrom, setDateFrom] = useState('2026-03-01');
-  const [dateTo, setDateTo] = useState('2026-03-23');
+  const [dateTo, setDateTo] = useState('2026-03-24');
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [activeWidgetId, setActiveWidgetId] = useState<string | null>(null);
   const [panelView, setPanelView] = useState<PanelView>('summary');
   const [panelData, setPanelData] = useState<any>(null);
+
+  const TODAY = '2026-03-24';
+  const isCurrentPeriod = dateTo >= TODAY;
 
   const openPanel = (widgetId: string, view: PanelView = 'summary', data: any = null) => {
     setActiveWidgetId(widgetId);
@@ -50,6 +54,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         dateTo,
         setDateFrom,
         setDateTo,
+        isCurrentPeriod,
         isPanelOpen,
         activeWidgetId,
         panelView,

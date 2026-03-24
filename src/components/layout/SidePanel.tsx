@@ -3,6 +3,7 @@ import { Box, Group, Text, UnstyledButton, ScrollArea } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 import { useDashboard } from '../../context/DashboardContext';
 import { formatCurrency } from '../../utils/formatters';
+import { ResponsiveContainer, ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartTooltip, Cell } from 'recharts';
 
 // ─── Display names map ───────────────────────────────────────────────────────
 
@@ -87,15 +88,6 @@ const TH = ({ label, align = 'left' }: { label: string; align?: 'left' | 'right'
   </th>
 );
 
-const TD = ({ children, align = 'left', bold }: { children: React.ReactNode; align?: 'left' | 'right'; bold?: boolean }) => (
-  <td style={{ padding: '9px 0', textAlign: align, verticalAlign: 'middle' }}>
-    {bold
-      ? <Text ff="Albert Sans" fw={600} size="13px" c="var(--color-text-primary)" className="num">{children}</Text>
-      : <Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{children}</Text>
-    }
-  </td>
-);
-
 const TR = ({ children }: { children: React.ReactNode }) => (
   <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>{children}</tr>
 );
@@ -117,63 +109,113 @@ const PanelReport = ({ widgetId }: { widgetId: string }) => {
   const [selectedCat, setSelectedCat] = useState('COGS');
 
   // DSO / DPO shared
+  const { isCurrentPeriod } = useDashboard();
   const isDSO = ['w4-dso', 'w15-dso', 'w15-dso-full'].includes(widgetId);
   const isDPO = ['w5-dpo', 'w19-dpo', 'w19-dpo-full'].includes(widgetId);
   const isUpcoming = ['w6-upcoming', 'w13-upcoming-cash', 'w22-upcoming-ap'].includes(widgetId);
   const isCash = ['w1-cash', 'w10-cash-full'].includes(widgetId);
 
   if (widgetId === 'w7-gross-profit') {
+    // Waterfall data: spacer lifts the bar to the correct position
+    const WATERFALL_DATA = [
+      { label: 'Revenue',      spacer: 0,    value: 45,   type: 'total',    color: '#2563EB' },
+      { label: 'COGS',         spacer: 18.5, value: 26.5, type: 'decrease', color: '#FCA5A5' },
+      { label: 'Gross Profit', spacer: 0,    value: 18.5, type: 'subtotal', color: '#16A34A' },
+    ];
+
+    // Custom tooltip for waterfall
+    const WaterfallTooltip = ({ active, payload, label }: any) => {
+      if (!active || !payload?.length) return null;
+      const entry = WATERFALL_DATA.find(d => d.label === label);
+      if (!entry) return null;
+      return (
+        <Box style={{
+          backgroundColor: 'white', border: '1px solid #E5E7EB',
+          borderRadius: 8, padding: '8px 12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        }}>
+          <Text ff="Space Grotesk" size="11px" c="var(--color-text-muted)" mb={2}>{label}</Text>
+          <Text ff="Albert Sans" fw={700} size="14px" c={entry.type === 'decrease' ? '#DC2626' : entry.color} className="num">
+            {entry.type === 'decrease' ? '−' : ''}₹{entry.value}L
+          </Text>
+        </Box>
+      );
+    };
+
     return (
       <Box>
         <PanelSection>
-          <SectionLabel label="THIS PERIOD" />
-          <Group justify="space-between" mb={6}>
-            <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Gross Profit</Text>
-            <Text ff="Albert Sans" fw={700} size="13px" c="var(--color-text-primary)" className="num">₹18.5L</Text>
-          </Group>
-          <Group justify="space-between" mb={6}>
-            <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Gross Margin</Text>
-            <Box style={{ backgroundColor: '#EFF6FF', padding: '1px 6px', borderRadius: 4 }}>
-              <Text ff="Space Grotesk" fw={600} size="12px" c="#2563EB">41%</Text>
+          <SectionLabel label="GROSS PROFIT DEEP DIVE" />
+          <Group gap={8} align="baseline" mb={16}>
+            <Text ff="Albert Sans" fw={700} size="28px" c="var(--color-text-primary)" className="num">₹18.5L</Text>
+            <Box style={{ backgroundColor: '#F0FDF4', padding: '2px 8px', borderRadius: 4 }}>
+              <Text ff="Space Grotesk" fw={600} size="12px" c="#16A34A">+7.6%</Text>
             </Box>
           </Group>
-          <Group justify="space-between" mb={6}>
-            <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Revenue</Text>
-            <Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">₹45L</Text>
-          </Group>
-          <Group justify="space-between" mb={6}>
-            <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">COGS</Text>
-            <Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">₹26.5L</Text>
-          </Group>
-          <Group justify="space-between">
-            <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Delta</Text>
-            <Text ff="Space Grotesk" size="12px" fw={600} c="var(--color-positive)">↑ ₹1.3L vs last month</Text>
-          </Group>
+          <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)" mb={16}>
+            Revenue → COGS deduction → Gross Profit bridge
+          </Text>
+          
+          {/* Waterfall Chart */}
+          <Box style={{ height: 160, marginTop: 16 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={WATERFALL_DATA} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke="#F3F4F6" />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 10, fill: '#9CA3AF', fontFamily: 'Space Grotesk' }}
+                  axisLine={false} tickLine={false}
+                />
+                <YAxis
+                  tickFormatter={(v) => `₹${v}L`}
+                  tick={{ fontSize: 10, fill: '#9CA3AF', fontFamily: 'Space Grotesk' }}
+                  axisLine={false} tickLine={false} width={42}
+                />
+                <RechartTooltip content={<WaterfallTooltip />} />
+                {/* Invisible spacer bar */}
+                <Bar dataKey="spacer" stackId="wf" fill="transparent" stroke="none" legendType="none" />
+                {/* Visible value bar with per-entry colors */}
+                <Bar dataKey="value" stackId="wf" radius={[3, 3, 0, 0]} maxBarSize={48}>
+                  {WATERFALL_DATA.map((entry, i) => (
+                    <Cell
+                      key={i}
+                      fill={entry.color}
+                      stroke={entry.type === 'end' ? '#15803D' : 'none'}
+                      strokeWidth={entry.type === 'end' ? 2 : 0}
+                    />
+                  ))}
+                </Bar>
+              </ComposedChart>
+            </ResponsiveContainer>
+          </Box>
         </PanelSection>
+        
         <PanelSection last>
-          <SectionLabel label="COMPARISON" />
+          <SectionLabel label="TOP PRODUCTS CONTRIBUTING TO PROFIT" />
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <TH label="METRIC" />
-                <TH label="THIS MONTH" align="right" />
-                <TH label="LAST MONTH" align="right" />
+                <TH label="PRODUCT" />
+                <TH label="PROFIT" align="right" />
                 <TH label="CHANGE" align="right" />
               </tr>
             </thead>
             <tbody>
               {[
-                { metric: 'Revenue',      thisMonth: '₹45L',   lastMonth: '₹42L',  change: '↑ 7.1%',  up: true  },
-                { metric: 'COGS',         thisMonth: '₹26.5L', lastMonth: '₹24.8L',change: '↑ 6.9%',  up: false },
-                { metric: 'Gross Profit', thisMonth: '₹18.5L', lastMonth: '₹17.2L',change: '↑ 7.6%',  up: true  },
-                { metric: 'Gross Margin', thisMonth: '41%',    lastMonth: '40.9%', change: '↑ 0.1pp', up: true  },
+                { name: 'Product A', profit: '₹8.2L', change: '+12.3%', up: true },
+                { name: 'Product B', profit: '₹5.8L', change: '+8.1%', up: true },
+                { name: 'Service X', profit: '₹4.5L', change: '−3.2%', up: false },
               ].map((row, i) => (
                 <TR key={i}>
-                  <td style={{ padding: '9px 0' }}><Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.metric}</Text></td>
-                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">{row.thisMonth}</Text></td>
-                  <td style={{ padding: '9px 0', textAlign: 'right' }}><Text ff="Albert Sans" size="13px" c="var(--color-text-muted)" className="num">{row.lastMonth}</Text></td>
+                  <td style={{ padding: '9px 0' }}>
+                    <Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.name}</Text>
+                  </td>
                   <td style={{ padding: '9px 0', textAlign: 'right' }}>
-                    <Text ff="Space Grotesk" size="12px" fw={500} c={row.up ? 'var(--color-positive)' : 'var(--color-critical)'}>{row.change}</Text>
+                    <Text ff="Albert Sans" fw={600} size="13px" c="var(--color-text-primary)" className="num">{row.profit}</Text>
+                  </td>
+                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                    <Text ff="Space Grotesk" size="12px" fw={500} c={row.up ? 'var(--color-positive)' : 'var(--color-critical)'}>
+                      {row.change}
+                    </Text>
                   </td>
                 </TR>
               ))}
@@ -187,77 +229,152 @@ const PanelReport = ({ widgetId }: { widgetId: string }) => {
   if (isCash) {
     return (
       <Box>
+        {/* Accounts Summary - Mini Cards */}
         <PanelSection>
-          <SectionLabel label="ACCOUNT BALANCES" />
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <TH label="ACCOUNT" />
-                <TH label="TYPE" />
-                <TH label="BALANCE" align="right" />
-                <TH label="CHANGE" align="right" />
-              </tr>
-            </thead>
-            <tbody>
-              <TR>
-                <TD>HDFC Current A/c</TD>
-                <TD><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">Current</Text></TD>
-                <TD align="right" bold>₹8.2L</TD>
-                <td style={{ padding: '9px 0', textAlign: 'right' }}>
-                  <Text ff="Space Grotesk" size="12px" c="var(--color-positive)">↑ ₹45,000</Text>
-                </td>
-              </TR>
-              <tr>
-                <TD>SBI Savings A/c</TD>
-                <TD><Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">Savings</Text></TD>
-                <TD align="right" bold>₹4.25L</TD>
-                <td style={{ padding: '9px 0', textAlign: 'right' }}>
-                  <Text ff="Space Grotesk" size="12px" c="var(--color-critical)">↓ ₹12,000</Text>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <Hairline />
-          <Group justify="space-between">
-            <Text ff="Space Grotesk" fw={700} size="14px" c="var(--color-text-primary)">Total Balance</Text>
-            <Group gap={8}>
-              <Text ff="Albert Sans" fw={700} size="15px" c="var(--color-text-primary)" className="num">{formatCurrency(1245000)}</Text>
-              <Text ff="Space Grotesk" size="12px" c="var(--color-positive)" fw={600}>↑ 8.5%</Text>
-            </Group>
-          </Group>
+          <SectionLabel label="ACCOUNTS" />
+          <Box style={{ 
+            backgroundColor: '#F9FAFB', 
+            borderRadius: 8, 
+            padding: '12px 16px',
+            border: '1px solid #E5E7EB',
+          }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <tbody>
+                <tr>
+                  <td style={{ padding: '8px 0' }}>
+                    <Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">HDFC Current A/c</Text>
+                  </td>
+                  <td style={{ padding: '8px 0', textAlign: 'right' }}>
+                    <Text ff="Albert Sans" fw={600} size="13px" c="var(--color-text-primary)" className="num">₹8.2L</Text>
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '8px 0' }}>
+                    <Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">SBI Savings A/c</Text>
+                  </td>
+                  <td style={{ padding: '8px 0', textAlign: 'right' }}>
+                    <Text ff="Albert Sans" fw={600} size="13px" c="var(--color-text-primary)" className="num">₹4.25L</Text>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </Box>
         </PanelSection>
+
+        {/* Today's Movements - Card Style */}
+        {isCurrentPeriod && (
+          <PanelSection>
+            <SectionLabel label="TODAY'S MOVEMENTS" />
+            <Box style={{ 
+              backgroundColor: '#FFFFFF', 
+              borderRadius: 8, 
+              padding: '12px 16px',
+              border: '1px solid #E5E7EB',
+            }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <tbody>
+                  {[
+                    { time: '10:42a', desc: 'NEFT from Acme Corp', amt: 250000, credit: true  },
+                    { time: '09:15a', desc: 'Vendor X Payment',    amt: 140000, credit: false },
+                  ].map((row, i) => (
+                    <tr key={i}>
+                      <td style={{ padding: '8px 0', width: 50 }}>
+                        <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.time}</Text>
+                      </td>
+                      <td style={{ padding: '8px 0' }}>
+                        <Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.desc}</Text>
+                      </td>
+                      <td style={{ padding: '8px 0', textAlign: 'right' }}>
+                        <Text ff="Albert Sans" fw={600} size="13px" className="num"
+                          c={row.credit ? 'var(--color-positive)' : 'var(--color-critical)'}>
+                          {row.credit ? '+' : '−'}{formatCurrency(row.amt)}
+                        </Text>
+                      </td>
+                    </tr>
+                  ))}
+                  {/* Net Flow Footer */}
+                  <tr style={{ borderTop: '1px solid #E5E7EB', marginTop: 8 }}>
+                    <td style={{ padding: '12px 0 4px', width: 50 }} />
+                    <td style={{ padding: '12px 0 4px' }}>
+                      <Text ff="Space Grotesk" fw={600} size="13px" c="var(--color-text-primary)">Net Flow Today</Text>
+                    </td>
+                    <td style={{ padding: '12px 0 4px', textAlign: 'right' }}>
+                      <Text ff="Albert Sans" fw={700} size="13px" c="var(--color-positive)" className="num">+₹1.10L</Text>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </Box>
+          </PanelSection>
+        )}
+
+        {/* Recent Activity - Timeline Style */}
         <PanelSection last>
-          <SectionLabel label="RECENT MOVEMENTS" />
+          <SectionLabel label="RECENT ACTIVITY" />
+          
+          {/* Mar 23 Group */}
+          <Text ff="Space Grotesk" fw={600} size="12px" c="var(--color-text-secondary)" mb={8} mt={16}>
+            Mar 23
+          </Text>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <TH label="DATE" />
-                <TH label="DESCRIPTION" />
-                <TH label="AMOUNT" align="right" />
-              </tr>
-            </thead>
             <tbody>
               {[
-                { date: '14 Nov', desc: 'NEFT from Acme Corp',    amt: 250000, credit: true  },
-                { date: '13 Nov', desc: 'Vendor X Payment',       amt: 140000, credit: false },
-                { date: '12 Nov', desc: 'NEFT from Globex',       amt: 85000,  credit: true  },
-                { date: '11 Nov', desc: 'Salary disbursement',    amt: 420000, credit: false },
-                { date: '10 Nov', desc: 'NEFT from Soylent',      amt: 120000, credit: true  },
+                { desc: 'Salary Disbursement', amt: 420000, credit: false },
+                { desc: 'NEFT from Globex',    amt: 85000,  credit: true  },
               ].map((row, i) => (
-                <TR key={i}>
-                  <td style={{ padding: '9px 0' }}>
-                    <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">{row.date}</Text>
+                <tr key={i}>
+                  <td style={{ padding: '8px 0', width: 16, verticalAlign: 'top' }}>
+                    <Box style={{ 
+                      width: 6, 
+                      height: 6, 
+                      borderRadius: '50%', 
+                      backgroundColor: '#E5E7EB',
+                      marginTop: 6,
+                    }} />
                   </td>
-                  <td style={{ padding: '9px 0' }}>
+                  <td style={{ padding: '8px 0' }}>
                     <Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.desc}</Text>
                   </td>
-                  <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                  <td style={{ padding: '8px 0', textAlign: 'right' }}>
                     <Text ff="Albert Sans" fw={600} size="13px" className="num"
                       c={row.credit ? 'var(--color-positive)' : 'var(--color-critical)'}>
                       {row.credit ? '+' : '−'}{formatCurrency(row.amt)}
                     </Text>
                   </td>
-                </TR>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          {/* Mar 22 Group */}
+          <Text ff="Space Grotesk" fw={600} size="12px" c="var(--color-text-secondary)" mb={8} mt={16}>
+            Mar 22
+          </Text>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <tbody>
+              {[
+                { desc: 'Electricity Bill', amt: 12000, credit: false },
+              ].map((row, i) => (
+                <tr key={i}>
+                  <td style={{ padding: '8px 0', width: 16, verticalAlign: 'top' }}>
+                    <Box style={{ 
+                      width: 6, 
+                      height: 6, 
+                      borderRadius: '50%', 
+                      backgroundColor: '#E5E7EB',
+                      marginTop: 6,
+                    }} />
+                  </td>
+                  <td style={{ padding: '8px 0' }}>
+                    <Text ff="Space Grotesk" size="13px" c="var(--color-text-primary)">{row.desc}</Text>
+                  </td>
+                  <td style={{ padding: '8px 0', textAlign: 'right' }}>
+                    <Text ff="Albert Sans" fw={600} size="13px" className="num"
+                      c={row.credit ? 'var(--color-positive)' : 'var(--color-critical)'}>
+                      {row.credit ? '+' : '−'}{formatCurrency(row.amt)}
+                    </Text>
+                  </td>
+                </tr>
               ))}
             </tbody>
           </table>
@@ -838,6 +955,25 @@ const PanelReport = ({ widgetId }: { widgetId: string }) => {
   if (widgetId === 'w14-ar-out') {
     return (
       <Box>
+        {isCurrentPeriod && (
+          <PanelSection>
+            <SectionLabel label="TODAY'S ACTIVITY" />
+            <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+              <Box>
+                <Text ff="Space Grotesk" size="10px" fw={600} c="var(--color-text-ghost)" style={{ textTransform: 'uppercase', letterSpacing: '0.8px' }} mb={4}>Collected</Text>
+                <Text ff="Albert Sans" fw={700} size="18px" c="var(--color-positive)" className="num">₹2.1L</Text>
+              </Box>
+              <Box>
+                <Text ff="Space Grotesk" size="10px" fw={600} c="var(--color-text-ghost)" style={{ textTransform: 'uppercase', letterSpacing: '0.8px' }} mb={4}>New Invoices</Text>
+                <Text ff="Albert Sans" fw={700} size="18px" c="var(--color-text-muted)" className="num">₹80K</Text>
+              </Box>
+              <Box>
+                <Text ff="Space Grotesk" size="10px" fw={600} c="var(--color-text-ghost)" style={{ textTransform: 'uppercase', letterSpacing: '0.8px' }} mb={4}>Net Change</Text>
+                <Text ff="Albert Sans" fw={700} size="18px" c="var(--color-positive)" className="num">↓ ₹1.3L</Text>
+              </Box>
+            </Box>
+          </PanelSection>
+        )}
         <PanelSection>
           <SectionLabel label="SUMMARY" />
           <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
