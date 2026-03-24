@@ -38,7 +38,6 @@ const GRAIN_STATS: Record<Grain, { current: number; prev: number; label: string;
   Month: { current: 4500000, prev: 4200000, label: 'This month', changeLabel: 'vs last month' },
 };
 
-// Values in L (lakhs) for the composed chart
 const REV_VS_EXP_DATA = [
   { month: 'Jan', Revenue: 30,   Expense: 25,   'Net Surplus': 5   },
   { month: 'Feb', Revenue: 31.5, Expense: 26,   'Net Surplus': 5.5 },
@@ -68,145 +67,105 @@ export const OverviewTab = () => {
     <Box p="24px">
       <KPIGrid>
 
-        {/* ── Row 1: Gross Profit (3col) | Revenue vs Expense (9col) ── */}
+        {/* ── Row 1: Gross Profit (3) | Revenue vs Expense (6) | P&L Summary (3) ── */}
 
-        <WidgetCard id="w7-gross-profit" title="Gross Profit" colSpan={3} isZoneA>
-          <Box style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+        <WidgetCard id="w7-gross-profit" title="Gross Profit" colSpan={3}>
+          <Box style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
             <Box>
-              <Group gap={8} align="baseline" mb={6}>
-                <Text ff="Albert Sans" fw={700} size="28px" c="var(--color-text-primary)" className="num">
+              <Group gap={6} align="baseline" mb={4}>
+                <Text ff="Albert Sans" fw={700} size="26px" c="var(--color-text-primary)" className="num">
                   {formatCurrency(1850000)}
                 </Text>
                 <Box style={{ backgroundColor: '#EFF6FF', padding: '1px 6px', borderRadius: 4 }}>
-                  <Text ff="Space Grotesk" fw={500} size="11px" c="#2563EB">41% gross margin</Text>
+                  <Text ff="Space Grotesk" fw={500} size="11px" c="#2563EB">41%</Text>
                 </Box>
               </Group>
               <TrendBadge value={7.6} label="vs last month" type="revenue" />
             </Box>
-            <Box style={{ borderTop: '1px solid var(--color-border)', paddingTop: 12, marginTop: 12 }}>
-              <Group justify="space-between" mb={6}>
-                <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Revenue</Text>
-                <Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(4500000)}</Text>
+            <Box style={{ borderTop: '1px solid var(--color-border)', paddingTop: 10, marginTop: 10 }}>
+              <Group justify="space-between" mb={4}>
+                <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">Revenue</Text>
+                <Text ff="Albert Sans" size="12px" c="var(--color-text-primary)" className="num">{formatCurrency(4500000)}</Text>
               </Group>
               <Group justify="space-between">
-                <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">COGS</Text>
-                <Text ff="Albert Sans" size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(2650000)}</Text>
+                <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">COGS</Text>
+                <Text ff="Albert Sans" size="12px" c="var(--color-text-primary)" className="num">{formatCurrency(2650000)}</Text>
               </Group>
             </Box>
           </Box>
         </WidgetCard>
 
-        <WidgetCard id="w10-rev-vs-exp" title="Revenue vs Expense" colSpan={9}>
-          <Group justify="space-between" align="flex-end" mb={16}>
-            <Box>
-              <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)" mb={2}>Net surplus · Jun</Text>
-              <Group gap={8} align="baseline">
-                <Text ff="Albert Sans" fw={700} size="24px" c="var(--color-text-primary)" className="num">
-                  {formatCurrency(1200000)}
-                </Text>
-                <Box style={{ display: 'inline-flex', padding: '2px 7px', borderRadius: 10, backgroundColor: 'var(--color-positive-bg)' }}>
-                  <Text ff="Space Grotesk" fw={600} size="12px" c="var(--color-positive)">↑ 26.7%</Text>
-                </Box>
-              </Group>
-            </Box>
+        <WidgetCard id="w10-rev-vs-exp" title="Revenue vs Expense" colSpan={6}>
+          <Group justify="space-between" align="center" mb={10}>
+            <Group gap={8} align="baseline">
+              <Text ff="Albert Sans" fw={700} size="20px" c="var(--color-text-primary)" className="num">
+                {formatCurrency(1200000)}
+              </Text>
+              <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)">net surplus · Jun</Text>
+              <Box style={{ display: 'inline-flex', padding: '1px 6px', borderRadius: 10, backgroundColor: 'var(--color-positive-bg)' }}>
+                <Text ff="Space Grotesk" fw={600} size="11px" c="var(--color-positive)">↑ 26.7%</Text>
+              </Box>
+            </Group>
             <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)">vs last month</Text>
           </Group>
-          <ResponsiveContainer width="100%" height={180}>
-            <ComposedChart data={REV_VS_EXP_DATA} margin={{ top: 4, right: 40, left: 0, bottom: 0 }}>
+          <ResponsiveContainer width="100%" height={150}>
+            <ComposedChart data={REV_VS_EXP_DATA} margin={{ top: 2, right: 36, left: 0, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke="#F3F4F6" />
-              <XAxis
-                dataKey="month"
-                tick={{ fontSize: 11, fill: '#9CA3AF', fontFamily: 'Space Grotesk' }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                yAxisId="left"
-                tickFormatter={(v) => `₹${v}L`}
-                tick={{ fontSize: 11, fill: '#9CA3AF', fontFamily: 'Space Grotesk' }}
-                axisLine={false}
-                tickLine={false}
-                width={48}
-              />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                tickFormatter={(v) => `₹${v}L`}
-                tick={{ fontSize: 11, fill: '#9CA3AF', fontFamily: 'Space Grotesk' }}
-                axisLine={false}
-                tickLine={false}
-                width={40}
-                domain={[0, 20]}
-              />
-              <RechartTooltip
-                formatter={(value, name) => [`₹${value}L`, name as string]}
-                contentStyle={{ fontFamily: 'Space Grotesk', fontSize: 12, border: '1px solid #E5E7EB', borderRadius: 8 }}
-              />
-              <Legend
-                wrapperStyle={{ fontFamily: 'Space Grotesk', fontSize: 12, paddingTop: 8 }}
-                iconType="square"
-              />
-              <Bar yAxisId="left" dataKey="Revenue" fill="#2563EB" radius={[3, 3, 0, 0]} maxBarSize={32} />
-              <Bar yAxisId="left" dataKey="Expense" fill="#CBD5E1" radius={[3, 3, 0, 0]} maxBarSize={32} />
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="Net Surplus"
-                stroke="#2563EB"
-                strokeWidth={2}
-                dot={{ fill: '#2563EB', stroke: '#FFFFFF', strokeWidth: 2, r: 5 }}
-                activeDot={{ r: 6, stroke: '#EFF6FF', strokeWidth: 2 }}
-              />
+              <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#9CA3AF', fontFamily: 'Space Grotesk' }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="left" tickFormatter={(v) => `₹${v}L`} tick={{ fontSize: 10, fill: '#9CA3AF', fontFamily: 'Space Grotesk' }} axisLine={false} tickLine={false} width={42} />
+              <YAxis yAxisId="right" orientation="right" tickFormatter={(v) => `₹${v}L`} tick={{ fontSize: 10, fill: '#9CA3AF', fontFamily: 'Space Grotesk' }} axisLine={false} tickLine={false} width={36} domain={[0, 20]} />
+              <RechartTooltip formatter={(value, name) => [`₹${value}L`, name as string]} contentStyle={{ fontFamily: 'Space Grotesk', fontSize: 12, border: '1px solid #E5E7EB', borderRadius: 8 }} />
+              <Legend wrapperStyle={{ fontFamily: 'Space Grotesk', fontSize: 11, paddingTop: 4 }} iconType="square" />
+              <Bar yAxisId="left" dataKey="Revenue" fill="#2563EB" radius={[3, 3, 0, 0]} maxBarSize={28} />
+              <Bar yAxisId="left" dataKey="Expense" fill="#CBD5E1" radius={[3, 3, 0, 0]} maxBarSize={28} />
+              <Line yAxisId="right" type="monotone" dataKey="Net Surplus" stroke="#2563EB" strokeWidth={2} dot={{ fill: '#2563EB', stroke: '#FFFFFF', strokeWidth: 2, r: 4 }} activeDot={{ r: 5 }} />
             </ComposedChart>
           </ResponsiveContainer>
         </WidgetCard>
 
-        {/* ── Row 2: P&L Statement (12col) ── */}
-
-        <WidgetCard id="w7-pnl-full" title="P&L Statement" colSpan={12} isZoneA>
-          <Box style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <WidgetCard id="w7-pnl-full" title="P&L Summary" colSpan={3}>
+          <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <Group justify="space-between">
-              <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Revenue</Text>
-              <Text ff="Albert Sans" fw={400} size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(4500000)}</Text>
+              <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">Revenue</Text>
+              <Text ff="Albert Sans" size="12px" c="var(--color-text-primary)" className="num">{formatCurrency(4500000)}</Text>
             </Group>
             <Group justify="space-between">
-              <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">COGS</Text>
-              <Text ff="Albert Sans" fw={400} size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(2650000)}</Text>
+              <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">COGS</Text>
+              <Text ff="Albert Sans" size="12px" c="var(--color-text-primary)" className="num">{formatCurrency(2650000)}</Text>
             </Group>
-            <Group justify="space-between" pt={8} style={{ borderTop: '1px solid var(--color-border)' }}>
-              <Group gap={6}>
-                <Text ff="Space Grotesk" fw={600} size="13px" c="var(--color-text-primary)">Gross Profit</Text>
-                <Box style={{ backgroundColor: 'var(--color-positive-bg)', padding: '2px 6px', borderRadius: 'var(--radius-badge)' }}>
+            <Group justify="space-between" pt={6} style={{ borderTop: '1px solid var(--color-border)' }}>
+              <Group gap={4}>
+                <Text ff="Space Grotesk" fw={600} size="12px" c="var(--color-text-primary)">Gross Profit</Text>
+                <Box style={{ backgroundColor: 'var(--color-positive-bg)', padding: '1px 5px', borderRadius: 4 }}>
                   <Text ff="Space Grotesk" fw={600} size="10px" c="var(--color-positive)">41%</Text>
                 </Box>
               </Group>
-              <Text ff="Albert Sans" fw={600} size="14px" c="var(--color-text-primary)" className="num">{formatCurrency(1850000)}</Text>
+              <Text ff="Albert Sans" fw={600} size="12px" c="var(--color-text-primary)" className="num">{formatCurrency(1850000)}</Text>
             </Group>
             <Group justify="space-between">
-              <Text ff="Space Grotesk" size="13px" c="var(--color-text-secondary)">Operating Expense</Text>
-              <Text ff="Albert Sans" fw={400} size="13px" c="var(--color-text-primary)" className="num">{formatCurrency(650000)}</Text>
+              <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">Opex</Text>
+              <Text ff="Albert Sans" size="12px" c="var(--color-text-primary)" className="num">{formatCurrency(650000)}</Text>
             </Group>
-            <Box style={{ flex: 1, minHeight: 16 }} />
-            <Group justify="space-between" pt={12} style={{ borderTop: '1px solid var(--color-border)' }}>
-              <Tooltip label="Revenue minus cost of goods and operating expenses, before tax.">
-                <Text ff="Space Grotesk" fw={700} size="14px" c="var(--color-text-primary)" style={{ cursor: 'help', borderBottom: '1px dashed var(--color-border-strong)' }}>
-                  Operating Profit
+            <Group justify="space-between" pt={6} style={{ borderTop: '1px solid var(--color-border)' }}>
+              <Tooltip label="Revenue minus COGS and operating expenses, before tax.">
+                <Text ff="Space Grotesk" fw={700} size="12px" c="var(--color-text-primary)" style={{ cursor: 'help', borderBottom: '1px dashed var(--color-border)' }}>
+                  Op. Profit
                 </Text>
               </Tooltip>
-              <Text ff="Albert Sans" fw={700} size="16px" c="var(--color-text-primary)" className="num">{formatCurrency(1200000)}</Text>
+              <Text ff="Albert Sans" fw={700} size="14px" c="var(--color-positive)" className="num">{formatCurrency(1200000)}</Text>
             </Group>
           </Box>
         </WidgetCard>
 
-        {/* ── Row 3: Expense Breakdown (12col) ── */}
+        {/* ── Row 2: Expense Breakdown (12col) ── */}
 
         <WidgetCard id="w11-exp-breakdown" title="Expense Breakdown" colSpan={12}>
-          <Group justify="space-between" mb={20} align="baseline">
-            <Group gap={8} align="baseline">
-              <Text ff="Albert Sans" fw={700} size="22px" c="var(--color-text-primary)" className="num">
+          <Group justify="space-between" mb={12} align="center">
+            <Group gap={6} align="baseline">
+              <Text ff="Albert Sans" fw={700} size="18px" c="var(--color-text-primary)" className="num">
                 {formatCurrency(EXPENSE_TOTAL)}
               </Text>
-              <Text ff="Space Grotesk" size="12px" c="var(--color-text-muted)">total this month</Text>
+              <Text ff="Space Grotesk" size="11px" c="var(--color-text-muted)">total this month</Text>
             </Group>
             <TrendBadge value={3.8} label="vs last month" />
           </Group>
@@ -215,17 +174,17 @@ export const OverviewTab = () => {
               const pct = Math.round((cat.amount / EXPENSE_TOTAL) * 100);
               return (
                 <Box key={cat.label}>
-                  <Group justify="space-between" mb={6}>
-                    <Group gap={6} align="center">
-                      <Box style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: cat.color, flexShrink: 0 }} />
-                      <Text ff="Space Grotesk" size="12px" fw={500} c="var(--color-text-secondary)">{cat.label}</Text>
+                  <Group justify="space-between" mb={4}>
+                    <Group gap={5} align="center">
+                      <Box style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: cat.color, flexShrink: 0 }} />
+                      <Text ff="Space Grotesk" size="11px" fw={500} c="var(--color-text-secondary)">{cat.label}</Text>
                     </Group>
-                    <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)">{pct}%</Text>
+                    <Text ff="Space Grotesk" size="10px" c="var(--color-text-ghost)">{pct}%</Text>
                   </Group>
-                  <Text ff="Albert Sans" fw={700} size="18px" c="var(--color-text-primary)" className="num" mb={6}>
+                  <Text ff="Albert Sans" fw={700} size="15px" c="var(--color-text-primary)" className="num" mb={4}>
                     {formatCurrency(cat.amount)}
                   </Text>
-                  <Box style={{ height: 5, backgroundColor: 'var(--color-bg-hover)', borderRadius: 3, overflow: 'hidden' }}>
+                  <Box style={{ height: 4, backgroundColor: 'var(--color-bg-hover)', borderRadius: 3, overflow: 'hidden' }}>
                     <Box style={{ height: '100%', width: `${pct}%`, backgroundColor: cat.color, borderRadius: 3, opacity: 0.85 }} />
                   </Box>
                 </Box>
@@ -234,79 +193,72 @@ export const OverviewTab = () => {
           </Box>
         </WidgetCard>
 
-        {/* ── Row 4: AI Insights (12col) ── */}
+        {/* ── Row 3: AI Insights (12col) — collapsed by default, expands in place ── */}
 
         <WidgetCard id="w-ai-insights" title="" colSpan={12} disablePanel>
           <AIInsightsAccordion />
         </WidgetCard>
 
-        {/* ── Row 5: Revenue Trend (12col) ── */}
+        {/* ── Row 4: Revenue Trend (5col) | Top Customers (7col) ── */}
 
         <WidgetCard
           id="w8-rev-full"
           title="Revenue Trend"
-          colSpan={12}
+          colSpan={5}
           titleExtra={<GrainToggle value={revGrain} onChange={setRevGrain} />}
         >
-          <Group justify="space-between" align="flex-end" mb={16}>
-            <Box>
-              <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)" mb={2}>{stats.label}</Text>
-              <Group gap={8} align="baseline">
-                <Text ff="Albert Sans" fw={700} size="24px" c="var(--color-text-primary)" className="num">
-                  {formatCurrency(stats.current)}
+          <Group justify="space-between" align="center" mb={10}>
+            <Group gap={8} align="baseline">
+              <Text ff="Albert Sans" fw={700} size="20px" c="var(--color-text-primary)" className="num">
+                {formatCurrency(stats.current)}
+              </Text>
+              <Box style={{ display: 'inline-flex', padding: '1px 6px', borderRadius: 10, backgroundColor: Number(pctChange) >= 0 ? 'var(--color-positive-bg)' : 'var(--color-critical-bg)' }}>
+                <Text ff="Space Grotesk" fw={600} size="11px" c={Number(pctChange) >= 0 ? 'var(--color-positive)' : 'var(--color-critical)'}>
+                  {Number(pctChange) >= 0 ? '↑' : '↓'} {Math.abs(Number(pctChange))}%
                 </Text>
-                <Box style={{ display: 'inline-flex', padding: '2px 7px', borderRadius: 10, backgroundColor: Number(pctChange) >= 0 ? 'var(--color-positive-bg)' : 'var(--color-critical-bg)' }}>
-                  <Text ff="Space Grotesk" fw={600} size="12px" c={Number(pctChange) >= 0 ? 'var(--color-positive)' : 'var(--color-critical)'}>
-                    {Number(pctChange) >= 0 ? '↑' : '↓'} {Math.abs(Number(pctChange))}%
-                  </Text>
-                </Box>
-              </Group>
-            </Box>
+              </Box>
+            </Group>
             <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)">{stats.changeLabel}</Text>
           </Group>
           <AreaChart
-            h={160}
+            h={130}
             data={REVENUE_DATA[revGrain]}
             dataKey="date"
             series={[{ name: 'revenue', color: '#2563EB', label: 'Revenue' }]}
             curveType="monotone"
             withDots
             withGradient
-            fillOpacity={0.15}
+            fillOpacity={0.12}
             gridAxis="y"
             tickLine="none"
-            strokeWidth={2.5}
+            strokeWidth={2}
             dotProps={{ r: 3, fill: '#2563EB', strokeWidth: 0 }}
-            activeDotProps={{ r: 5, fill: '#2563EB', stroke: '#EFF6FF', strokeWidth: 2 }}
+            activeDotProps={{ r: 4, fill: '#2563EB', stroke: '#EFF6FF', strokeWidth: 2 }}
             valueFormatter={(val) => formatCurrency(val as number)}
-            styles={{
-              axis: { fontFamily: 'Space Grotesk', fontSize: 11, fill: 'var(--color-text-ghost)' },
-            }}
+            styles={{ axis: { fontFamily: 'Space Grotesk', fontSize: 10, fill: 'var(--color-text-ghost)' } }}
           />
         </WidgetCard>
 
-        {/* ── Row 6: Top Customers (12col) ── */}
-
-        <WidgetCard id="w9-top-customers" title="Top Customers by Revenue" colSpan={12}>
-          <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+        <WidgetCard id="w9-top-customers" title="Top Customers by Revenue" colSpan={7}>
+          <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
             {[
               { name: 'Acme Corp',    amount: 1200000, percent: 65, share: '26.7%', trend: '+8.2%', up: true  },
               { name: 'Globex Inc',   amount: 850000,  percent: 48, share: '18.9%', trend: '+3.1%', up: true  },
               { name: 'Soylent Corp', amount: 420000,  percent: 28, share: '9.3%',  trend: '−2.4%', up: false },
               { name: 'Initech',      amount: 180000,  percent: 12, share: '4.0%',  trend: '+0.9%', up: true  },
             ].map((c) => (
-              <Box key={c.name} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Box key={c.name} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <Group justify="space-between" align="flex-start">
-                  <Text ff="Space Grotesk" fw={500} size="13px" c="var(--color-text-secondary)">{c.name}</Text>
-                  <Box style={{ display: 'inline-flex', padding: '1px 6px', borderRadius: 4, backgroundColor: c.up ? 'var(--color-positive-bg)' : 'var(--color-critical-bg)' }}>
-                    <Text ff="Space Grotesk" size="11px" fw={500} c={c.up ? 'var(--color-positive)' : 'var(--color-critical)'}>{c.trend}</Text>
+                  <Text ff="Space Grotesk" fw={500} size="12px" c="var(--color-text-secondary)">{c.name}</Text>
+                  <Box style={{ display: 'inline-flex', padding: '1px 5px', borderRadius: 4, backgroundColor: c.up ? 'var(--color-positive-bg)' : 'var(--color-critical-bg)' }}>
+                    <Text ff="Space Grotesk" size="10px" fw={500} c={c.up ? 'var(--color-positive)' : 'var(--color-critical)'}>{c.trend}</Text>
                   </Box>
                 </Group>
                 <Group justify="space-between" align="baseline">
-                  <Text ff="Albert Sans" fw={700} size="18px" c="var(--color-text-primary)" className="num">{formatCurrency(c.amount)}</Text>
-                  <Text ff="Space Grotesk" size="12px" c="var(--color-text-ghost)">{c.share}</Text>
+                  <Text ff="Albert Sans" fw={700} size="15px" c="var(--color-text-primary)" className="num">{formatCurrency(c.amount)}</Text>
+                  <Text ff="Space Grotesk" size="11px" c="var(--color-text-ghost)">{c.share}</Text>
                 </Group>
-                <Box style={{ height: 6, backgroundColor: 'var(--color-bg-hover)', borderRadius: 3, overflow: 'hidden' }}>
+                <Box style={{ height: 5, backgroundColor: 'var(--color-bg-hover)', borderRadius: 3, overflow: 'hidden' }}>
                   <Box style={{ height: '100%', width: `${c.percent}%`, background: 'linear-gradient(90deg, #2563EB, #60A5FA)', borderRadius: 3 }} />
                 </Box>
               </Box>
